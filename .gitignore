@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+# Dataset — CT scans stay local, never commit (see planning docs)
+TORALIS CHALLENGE/
+data/
+outputs/

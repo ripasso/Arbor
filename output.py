@@ -37,9 +37,24 @@ def build_json(case_id: str, daughters: list[Daughter]) -> dict:
     }
     An empty `daughters` list is valid (no eligible branches found).
     """
-    raise NotImplementedError
+    return {
+        "case_id": case_id,
+        "parent": {"instance_id": "aorta"},
+        "daughters": [
+            {
+                "instance_id": d.instance_id,
+                "parent_instance_id": d.parent_instance_id,
+                "ostium_xyz_mm": [float(v) for v in d.ostium_xyz_mm],
+                "seed_xyz_mm": [float(v) for v in d.seed_xyz_mm],
+                "radius_mm": float(d.radius_mm),
+                "direction_xyz": [float(v) for v in d.direction_xyz],
+            }
+            for d in daughters
+        ],
+    }
 
 
 def write_json(data: dict, output_path: str) -> None:
     """Write `data` as pretty-printed JSON to `output_path`."""
-    raise NotImplementedError
+    with open(output_path, "w") as f:
+        json.dump(data, f, indent=2)

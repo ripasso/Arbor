@@ -139,23 +139,50 @@ def check_eligibility(
     return float(arc_length_mm(centerline, spacing_mm)[-1]) >= min_trace_mm
 
 
-def find_first_bifurcation(component: Component, centerline: np.ndarray) -> int | None:
+def _is_real_side_branch(
+    start: tuple[int, int, int],
+    junction: tuple[int, int, int],
+    path_set: set,
+    skel: set,
+    min_size: int,
+) -> bool:
+    """A side branch is real iff it does not loop back onto the main
+    centerline path and is at least `min_size` voxels long. Loops and
+    1-2 voxel spurs are thinning artifacts where the component is fat
+    near the aortic wall, not real downstream forks."""
+    seen = {start}
+    stack = [start]
+    while stack:
+        cur = stack.pop()
+        for nb in _skeleton_neighbors(cur, skel):
+            if nb == junction or nb in seen:
+                continue
+            if nb in path_set:
+                return False
+            seen.add(nb)
+            stack.append(nb)
+    return len(seen) >= min_size
+
+
+def find_first_bifurcation(
+    component: Component, centerline: np.ndarray, min_branch_voxels: int = 3
+) -> int | None:
     """
     Return the index (along `centerline`) of the first skeleton voxel with
     >=3 skeleton neighbours (a bifurcation point), or None if the segment
     has no bifurcation within the traced region.
     """
     skel = _skeleton_index_set(component)
+    path_set = {tuple(p) for p in centerline}
     for idx in range(1, len(centerline)):
         p = tuple(centerline[idx])
         prev_pt = tuple(centerline[idx - 1])
         next_pt = tuple(centerline[idx + 1]) if idx + 1 < len(centerline) else None
-        extra = [
-            nb for nb in _skeleton_neighbors(p, skel)
-            if nb != prev_pt and nb != next_pt
-        ]
-        if extra:
-            return idx
+        for nb in _skeleton_neighbors(p, skel):
+            if nb == prev_pt or nb == next_pt:
+                continue
+            if _is_real_side_branch(nb, p, path_set, skel, min_branch_voxels):
+                return idx
     return None
 
 
