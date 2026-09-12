@@ -1,4 +1,4 @@
-# Branchseed
+# Arbor
 
 Detect direct daughter arteries branching off the abdominal aorta from a CT volume + binary aorta mask.
 
