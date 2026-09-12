@@ -20,6 +20,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import SimpleITK as sitk
+from scipy import ndimage
 
 from components import Component
 
@@ -38,7 +39,11 @@ def find_contact_voxels(component: Component, aorta_mask: sitk.Image) -> np.ndar
     Return the subset of `component`'s voxels that are adjacent to
     `aorta_mask` (the actual contact zone at the aortic wall).
     """
-    raise NotImplementedError
+    mask_arr = sitk.GetArrayFromImage(aorta_mask) > 0
+    dilated = ndimage.binary_dilation(mask_arr, structure=np.ones((3, 3, 3), dtype=int))
+    zyx = component.voxel_indices[:, ::-1]
+    is_contact = dilated[zyx[:, 0], zyx[:, 1], zyx[:, 2]]
+    return component.voxel_indices[is_contact]
 
 
 def find_contact_centroid(contact_voxel_indices: np.ndarray) -> tuple[float, float, float]:
@@ -47,7 +52,7 @@ def find_contact_centroid(contact_voxel_indices: np.ndarray) -> tuple[float, flo
     centroid -- this is what gets converted to mm and reported as
     ostium_xyz_mm (drives the 25%-weighted ostium localisation score).
     """
-    raise NotImplementedError
+    return tuple(contact_voxel_indices.astype(float).mean(axis=0))
 
 
 def is_cropped_face(
@@ -62,7 +67,23 @@ def is_cropped_face(
     flatness test using `flatness_ratio`) -- these are the aorta's cut
     ends, not real branch origins.
     """
-    raise NotImplementedError
+    mask_arr = sitk.GetArrayFromImage(aorta_mask) > 0
+    occupied_ks = np.nonzero(mask_arr.any(axis=(1, 2)))[0]
+    k_min, k_max = occupied_ks.min(), occupied_ks.max()
+
+    contact_ks = contact_voxel_indices[:, 2]
+    at_edge = (
+        contact_ks.min() <= k_min + edge_slices
+        or contact_ks.max() >= k_max - edge_slices
+    )
+    if not at_edge:
+        return False
+
+    spacing = np.asarray(aorta_mask.GetSpacing())
+    pts = contact_voxel_indices.astype(float) * spacing
+    pts = pts - pts.mean(axis=0)
+    eigvals = np.linalg.eigvalsh(pts.T @ pts / len(pts))
+    return bool(eigvals[0] < flatness_ratio * eigvals[-1])
 
 
 def deduplicate_ostia(candidates: list[OstiumCandidate]) -> list[OstiumCandidate]:
@@ -74,4 +95,35 @@ def deduplicate_ostia(candidates: list[OstiumCandidate]) -> list[OstiumCandidate
       splits downstream is ONE instance, not multiple.
     Returns the final deduplicated, crop-face-filtered candidate list.
     """
-    raise NotImplementedError
+    kept = []
+    seen_labels = set()
+    for cand in candidates:
+        if cand.is_cropped_face:
+            continue
+        if cand.component.label in seen_labels:
+            continue
+        seen_labels.add(cand.component.label)
+
+        zones = _contact_zones(cand.contact_voxel_indices)
+        if len(zones) > 1:
+            largest = max(zones, key=len)
+            cand = OstiumCandidate(
+                component=cand.component,
+                contact_voxel_indices=largest,
+                centroid_index=find_contact_centroid(largest),
+                is_cropped_face=False,
+            )
+        kept.append(cand)
+    return kept
+
+
+def _contact_zones(contact_voxel_indices: np.ndarray) -> list[np.ndarray]:
+    """Split a contact patch into its 26-connected sub-zones."""
+    if len(contact_voxel_indices) == 0:
+        return []
+    local = contact_voxel_indices - contact_voxel_indices.min(axis=0)
+    grid = np.zeros(local.max(axis=0) + 1, dtype=bool)
+    grid[tuple(local.T)] = True
+    labels, n = ndimage.label(grid, structure=np.ones((3, 3, 3), dtype=int))
+    per_voxel = labels[tuple(local.T)]
+    return [contact_voxel_indices[per_voxel == i] for i in range(1, n + 1)]
