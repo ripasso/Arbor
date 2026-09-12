@@ -21,6 +21,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import SimpleITK as sitk
+from scipy import ndimage
 
 
 @dataclass
@@ -36,7 +37,14 @@ def label_components(candidate_mask: sitk.Image) -> list[Component]:
     Label `candidate_mask` into 26-connected components. Returns one
     Component per connected blob (touches_aorta not yet determined here).
     """
-    raise NotImplementedError
+    arr = sitk.GetArrayFromImage(candidate_mask) > 0
+    labels, n = ndimage.label(arr, structure=np.ones((3, 3, 3), dtype=int))
+    components = []
+    for lab in range(1, n + 1):
+        zyx = np.argwhere(labels == lab)
+        ijk = np.ascontiguousarray(zyx[:, ::-1])  # numpy (z,y,x) -> sitk index (x,y,z)
+        components.append(Component(label=lab, voxel_indices=ijk, touches_aorta=False))
+    return components
 
 
 def filter_touching_aorta(components: list[Component], aorta_mask: sitk.Image) -> list[Component]:
@@ -46,4 +54,9 @@ def filter_touching_aorta(components: list[Component], aorta_mask: sitk.Image) -
     touches_aorta. Components that don't touch are dropped (not a direct
     daughter -- e.g. a branch-of-a-branch, or unrelated bright tissue).
     """
-    raise NotImplementedError
+    mask_arr = sitk.GetArrayFromImage(aorta_mask) > 0
+    dilated = ndimage.binary_dilation(mask_arr, structure=np.ones((3, 3, 3), dtype=int))
+    for comp in components:
+        zyx = comp.voxel_indices[:, ::-1]
+        comp.touches_aorta = bool(dilated[zyx[:, 0], zyx[:, 1], zyx[:, 2]].any())
+    return [comp for comp in components if comp.touches_aorta]
