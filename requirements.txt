@@ -1,6 +1,0 @@
-SimpleITK
-numpy
-scipy
-scikit-image
-pytest
-matplotlib

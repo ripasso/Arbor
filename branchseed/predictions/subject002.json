@@ -1,0 +1,128 @@
+{
+  "case_id": "subject002",
+  "parent": {
+    "instance_id": "aorta"
+  },
+  "daughters": [
+    {
+      "instance_id": "branch_001",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -5.18,
+        12.11,
+        1558.44
+      ],
+      "seed_xyz_mm": [
+        -5.07,
+        9.5,
+        1554.24
+      ],
+      "radius_mm": 2.26,
+      "direction_xyz": [
+        0.0294,
+        -0.5421,
+        -0.8398
+      ]
+    },
+    {
+      "instance_id": "branch_002",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -6.98,
+        7.52,
+        1541.5
+      ],
+      "seed_xyz_mm": [
+        -7.83,
+        4.04,
+        1538.31
+      ],
+      "radius_mm": 2.65,
+      "direction_xyz": [
+        -0.128,
+        -0.7468,
+        -0.6526
+      ]
+    },
+    {
+      "instance_id": "branch_003",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -16.51,
+        8.64,
+        1525.47
+      ],
+      "seed_xyz_mm": [
+        -20.75,
+        7.75,
+        1523.39
+      ],
+      "radius_mm": 2.44,
+      "direction_xyz": [
+        -0.8851,
+        -0.11,
+        -0.4521
+      ]
+    },
+    {
+      "instance_id": "branch_004",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -2.8,
+        10.49,
+        1517.2
+      ],
+      "seed_xyz_mm": [
+        1.46,
+        11.98,
+        1516.45
+      ],
+      "radius_mm": 2.69,
+      "direction_xyz": [
+        0.8895,
+        0.4192,
+        -0.1817
+      ]
+    },
+    {
+      "instance_id": "branch_005",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -11.18,
+        1.75,
+        1485.91
+      ],
+      "seed_xyz_mm": [
+        -14.72,
+        3.31,
+        1488.56
+      ],
+      "radius_mm": 0.75,
+      "direction_xyz": [
+        -0.7175,
+        0.3141,
+        0.6217
+      ]
+    },
+    {
+      "instance_id": "branch_006",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -2.23,
+        -13.03,
+        1467.28
+      ],
+      "seed_xyz_mm": [
+        -0.61,
+        -13.7,
+        1462.61
+      ],
+      "radius_mm": 1.44,
+      "direction_xyz": [
+        0.3253,
+        -0.1517,
+        -0.9334
+      ]
+    }
+  ]
+}

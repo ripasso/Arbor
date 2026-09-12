@@ -1,0 +1,128 @@
+# Branchseed — discovering aortic branch origins
+
+Given a CT volume and a binary mask of the parent abdominal aorta only, this
+finds every artery that leaves that aorta and reports each one as a separate
+daughter instance: the centre of its opening, a seed 5 mm along it, its initial
+direction and its local lumen radius, in physical millimetres.
+
+Classical image processing throughout. No training data, no GPU, no network
+access, no per-case parameters.
+
+## Setup
+
+```
+pip install -r requirements.txt
+```
+
+## Run
+
+```
+python run.py --image image.nii.gz --aorta-mask aorta_mask.nii.gz --output prediction.json
+```
+
+`--case-id` is optional; without it the case takes the name of the folder the
+image sits in. Volumes may be `.nii` or `.nii.gz`, and the loader sniffs the
+file rather than trusting the extension, because part of the development set
+ships gzip-compressed under a plain `.nii` name.
+
+To reproduce the whole development set and the figures:
+
+```
+python run_all.py            # writes out/predictions/*.json and out/assets/*
+```
+
+## Output
+
+```json
+{
+  "case_id": "subject001",
+  "parent": { "instance_id": "aorta" },
+  "daughters": [
+    {
+      "instance_id": "branch_001",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [12.4, -31.8, 184.6],
+      "seed_xyz_mm": [15.1, -29.7, 181.2],
+      "radius_mm": 2.7,
+      "direction_xyz": [0.56, 0.43, -0.71]
+    }
+  ]
+}
+```
+
+Coordinates are in the physical frame `SimpleITK.TransformIndexToPhysicalPoint`
+returns, not voxel indices. `direction_xyz` is a unit vector pointing from the
+opening into the daughter. Each real daughter appears once. A case with no
+eligible daughter returns an empty `daughters` list rather than a guess.
+
+## Method
+
+**1 — Learn this scan's contrast.** Aortic opacification across the development
+set runs from about 85 HU to 580 HU, so no fixed threshold survives. The window
+is read off the supplied lumen, then pushed down a ladder only as far as the
+wall will take: each step is scored by how many separate, plausibly sized
+patches of bright tissue touch the wall, and the threshold that resolves the
+most openings without any single patch swallowing more than about an eighth of
+the wall is the one used. Too high and faint branches never reach the wall; too
+low and adjacent liver and bowel fuse the footprints into one sheet. The peak
+between those failures is a stable operating point.
+
+**2 — One footprint, one ostium.** Where bright tissue meets the wall it leaves
+a patch, and each patch is one daughter instance. That is the rule the brief
+sets out: two origins are separate only when they are separate at the wall, and
+a common trunk counts once however soon it divides afterwards.
+
+**3 — Grow outward, never sideways.** Those footprint labels are then propagated
+away from the wall in order of distance from the aortic surface. A voxel can
+only inherit a label from something nearer the aorta than itself, so two
+branches can never fuse into a single blob, and a leak into neighbouring tissue
+stays attached to the origin it came from instead of swallowing the abdomen.
+That containment is what makes a permissive threshold safe to use.
+
+**4 — Walk the first ten millimetres.** Each branch is followed outward shell by
+shell to the first bifurcation or 10 mm, whichever comes first. The seed is the
+point 5 mm along that path. The direction is a line fit over the first 6 mm. The
+radius is measured on a half-maximum contour in the plane across the vessel at
+the seed, which keeps it sub-voxel on 1.5 mm scans instead of stepping in
+half-voxel jumps.
+
+**Geometry.** The centerline is a geodesic between the two ends of the lumen,
+traced through a cost field that prefers the centre so it does not hug the wall
+on curves. Cross-sectional frames are anchored to the patient's anterior
+direction at every station rather than transported along the curve, so clock
+position means the same thing at every level and in every case — which is what
+makes the maps comparable across a cohort.
+
+**What is deliberately excluded.** Origins sitting on the flat faces created by
+cropping the segment; wall-hugging sheets whose opening is out of all proportion
+to the lumen they feed; anything too bright to be contrast, which is calcium or
+bone; anything that cannot be followed 5 mm. The terminal division of the aorta
+into the iliacs is reported separately from the daughters, since the brief puts
+it outside the core task.
+
+## Files
+
+| Path | What it is |
+|---|---|
+| `run.py` | the required CLI, one case in, one JSON out |
+| `pipeline.py` | per-case orchestration, filters, and the prediction record |
+| `branches.py` | contrast window, outward labelled growth, tracing, radius |
+| `aorta.py` | mask cleanup, centerline, patient-anchored frames, wall unwrapping |
+| `bsio.py` | NIfTI reading and the voxel-to-physical-millimetre conversion |
+| `export.py` | the figures and the atlas data the visualisation is built from |
+| `run_all.py` | batch driver over a folder of `subjectNNN/` cases |
+| `site/` | the interactive visualisation, generated entirely from the outputs |
+
+## Visual checks
+
+`out/assets/` holds, for every case, the flattened wall map with its detected
+origins, and a sprite sheet of patient-aligned axial slices with the supplied
+mask overlaid. The page in `site/` puts them together: pick an origin on the
+flattened map and the slice viewer jumps to the level it was found on, with the
+direction vector drawn as it projects into that slice.
+
+## Runtime
+
+Single-threaded, CPU only, peak memory under 2 GB. Cost scales with the length
+of aorta supplied rather than with file size. Per-case timings for the whole
+development set are in the table at the bottom of the visualisation.

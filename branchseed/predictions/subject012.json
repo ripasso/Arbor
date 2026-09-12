@@ -1,0 +1,228 @@
+{
+  "case_id": "subject012",
+  "parent": {
+    "instance_id": "aorta"
+  },
+  "daughters": [
+    {
+      "instance_id": "branch_001",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        6.85,
+        22.99,
+        1470.7
+      ],
+      "seed_xyz_mm": [
+        7.99,
+        18.48,
+        1469.22
+      ],
+      "radius_mm": 3.69,
+      "direction_xyz": [
+        0.2277,
+        -0.9329,
+        -0.2791
+      ]
+    },
+    {
+      "instance_id": "branch_002",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        5.86,
+        16.77,
+        1452.68
+      ],
+      "seed_xyz_mm": [
+        6.74,
+        12.38,
+        1450.67
+      ],
+      "radius_mm": 3.25,
+      "direction_xyz": [
+        0.1643,
+        -0.8996,
+        -0.4047
+      ]
+    },
+    {
+      "instance_id": "branch_003",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -1.26,
+        22.69,
+        1441.69
+      ],
+      "seed_xyz_mm": [
+        -4.97,
+        21.61,
+        1438.83
+      ],
+      "radius_mm": 3.01,
+      "direction_xyz": [
+        -0.7781,
+        -0.2632,
+        -0.5703
+      ]
+    },
+    {
+      "instance_id": "branch_004",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        17.66,
+        23.95,
+        1438.49
+      ],
+      "seed_xyz_mm": [
+        22.14,
+        24.68,
+        1436.82
+      ],
+      "radius_mm": 3.17,
+      "direction_xyz": [
+        0.9287,
+        0.1879,
+        -0.3196
+      ]
+    },
+    {
+      "instance_id": "branch_005",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        8.86,
+        26.44,
+        1405.33
+      ],
+      "seed_xyz_mm": [
+        10.89,
+        29.84,
+        1407.18
+      ],
+      "radius_mm": 0.89,
+      "direction_xyz": [
+        0.4802,
+        0.7254,
+        0.4932
+      ]
+    },
+    {
+      "instance_id": "branch_006",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        2.06,
+        25.06,
+        1405.2
+      ],
+      "seed_xyz_mm": [
+        -1.06,
+        27.08,
+        1407.67
+      ],
+      "radius_mm": 0.91,
+      "direction_xyz": [
+        -0.634,
+        0.364,
+        0.6823
+      ]
+    },
+    {
+      "instance_id": "branch_007",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        7.53,
+        18.72,
+        1371.15
+      ],
+      "seed_xyz_mm": [
+        9.72,
+        22.67,
+        1372.21
+      ],
+      "radius_mm": 1.37,
+      "direction_xyz": [
+        0.4699,
+        0.8366,
+        0.2817
+      ]
+    },
+    {
+      "instance_id": "branch_008",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -2.06,
+        17.19,
+        1368.37
+      ],
+      "seed_xyz_mm": [
+        -5.17,
+        19.69,
+        1370.91
+      ],
+      "radius_mm": 0.95,
+      "direction_xyz": [
+        -0.6277,
+        0.4924,
+        0.6029
+      ]
+    },
+    {
+      "instance_id": "branch_009",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        5.28,
+        2.64,
+        1365.34
+      ],
+      "seed_xyz_mm": [
+        5.31,
+        1.04,
+        1360.65
+      ],
+      "radius_mm": 1.6,
+      "direction_xyz": [
+        0.0,
+        -0.4323,
+        -0.9017
+      ]
+    },
+    {
+      "instance_id": "branch_010",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -3.21,
+        17.1,
+        1347.82
+      ],
+      "seed_xyz_mm": [
+        -7.27,
+        18.98,
+        1347.45
+      ],
+      "radius_mm": 0.82,
+      "direction_xyz": [
+        -0.9215,
+        0.3814,
+        0.0734
+      ]
+    },
+    {
+      "instance_id": "branch_011",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        4.34,
+        18.82,
+        1344.81
+      ],
+      "seed_xyz_mm": [
+        7.93,
+        21.05,
+        1345.14
+      ],
+      "radius_mm": 1.24,
+      "direction_xyz": [
+        0.8816,
+        0.406,
+        0.2407
+      ]
+    }
+  ]
+}

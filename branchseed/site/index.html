@@ -1,0 +1,725 @@
+<title>The Unrolled Aorta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --ground:#F3EFE9;
+  --surface:#FBF9F6;
+  --surface-2:#E9E3DA;
+  --ink:#221A26;
+  --ink-2:#5B4F62;
+  --ink-3:#8B7F91;
+  --line:#DBD2C8;
+  --line-strong:#C3B8AC;
+  --accent:#9C6212;
+  --accent-soft:#E9D6B4;
+  --origin:#C0284C;
+  --zone:#2C62C4;
+  --film:#1B1220;
+  --film-ink:#EFE4DC;
+  --shadow:0 1px 2px rgba(34,26,38,.06),0 8px 24px -18px rgba(34,26,38,.4);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#120E17;
+    --surface:#1A1421;
+    --surface-2:#251D2E;
+    --ink:#F2E9E4;
+    --ink-2:#B7A9BC;
+    --ink-3:#8A7C90;
+    --line:#342A3E;
+    --line-strong:#4A3D56;
+    --accent:#E0A040;
+    --accent-soft:#3A2C1A;
+    --origin:#E05A72;
+    --zone:#5B93E6;
+    --film:#0B0710;
+    --film-ink:#F2E9E4;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 30px -20px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#120E17;
+  --surface:#1A1421;
+  --surface-2:#251D2E;
+  --ink:#F2E9E4;
+  --ink-2:#B7A9BC;
+  --ink-3:#8A7C90;
+  --line:#342A3E;
+  --line-strong:#4A3D56;
+  --accent:#E0A040;
+  --accent-soft:#3A2C1A;
+  --origin:#E05A72;
+  --zone:#5B93E6;
+  --film:#0B0710;
+  --film-ink:#F2E9E4;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 30px -20px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 72px}
+h1,h2,h3{text-wrap:balance;margin:0}
+a{color:var(--accent)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- masthead ---------- */
+.mast{padding-block:48px 24px;border-bottom:1px solid var(--line)}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+}
+.eyebrow .rule{flex:1 1 40px;height:1px;background:var(--line);min-width:24px}
+h1{
+  font-family:var(--serif);font-weight:400;font-size:clamp(40px,7.5vw,74px);
+  line-height:.98;letter-spacing:-.015em;margin-block:18px 0;
+}
+h1 em{font-style:italic;color:var(--accent)}
+.thesis{max-width:60ch;color:var(--ink-2);font-size:17px;margin-block:16px 0}
+.stats{display:flex;flex-wrap:wrap;gap:36px;margin-block:32px 0}
+.stat .n{font-family:var(--serif);font-size:38px;line-height:1;letter-spacing:-.01em}
+.stat .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+
+/* ---------- sections ---------- */
+section{padding-block:52px 0}
+.shead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.shead h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.6vw,36px);letter-spacing:-.01em}
+.shead .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.lede{max-width:66ch;color:var(--ink-2);margin-block:10px 26px}
+
+/* ---------- case picker ---------- */
+.picker{display:flex;gap:6px;overflow-x:auto;padding-block:4px 12px;scrollbar-width:thin}
+.chip{
+  flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+  font-family:var(--mono);font-size:11.5px;padding:7px 11px;border-radius:2px;cursor:pointer;
+  display:flex;gap:8px;align-items:center;transition:border-color .15s,color .15s;
+}
+.chip b{color:var(--ink);font-weight:500}
+.chip .dot{width:5px;height:5px;border-radius:50%;background:var(--origin);opacity:.75}
+.chip:hover{border-color:var(--line-strong);color:var(--ink)}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:var(--accent-soft)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- the stage ---------- */
+.stage{display:grid;grid-template-columns:124px minmax(0,1fr) 298px;gap:16px;margin-top:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:14px}
+.panel-hd{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.filmbox{background:var(--film);border-color:var(--line-strong)}
+.mapwrap{position:relative;line-height:0}
+.mapwrap img{width:100%;height:var(--maph);display:block;border-radius:2px;image-rendering:auto}
+#pins{position:absolute;inset:0;line-height:normal}
+#pins .noon{position:absolute;left:50%;top:0;bottom:0;width:0;border-left:1px dashed rgba(255,255,255,.18)}
+#pins .pin{
+  position:absolute;transform:translate(-50%,-50%);width:30px;height:20px;border-radius:50%;
+  border:2px solid var(--origin);cursor:pointer;transition:border-width .12s,opacity .12s;
+}
+#pins .pin::before{
+  content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;
+  border-radius:50%;background:var(--origin);
+}
+#pins .pin b{
+  position:absolute;left:34px;top:50%;transform:translateY(-50%);font-family:var(--mono);
+  font-size:12px;font-weight:500;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.9);
+}
+#pins .pin.on{border-width:4px}
+#pins.dim .pin:not(.on){opacity:.45}
+.clockaxis{display:flex;justify-content:space-between;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.clockaxis span:nth-child(3){color:var(--ink-2)}
+
+.blist{display:flex;flex-direction:column;gap:8px;max-height:var(--maph);overflow-y:auto;padding-right:4px}
+.bcard{
+  border:1px solid var(--line);border-left:3px solid var(--origin);background:var(--ground);
+  border-radius:2px;padding:9px 11px;cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit;
+}
+.bcard:hover,.bcard.on{border-color:var(--accent);border-left-color:var(--origin);background:var(--surface-2)}
+.bcard:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.bcard .row1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.bcard .id{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.bcard .clock{font-family:var(--serif);font-size:19px;line-height:1.1}
+.bcard .row2{display:flex;gap:12px;font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-top:4px;flex-wrap:wrap}
+.conf{height:3px;background:var(--surface-2);margin-top:7px;border-radius:2px;overflow:hidden}
+.conf i{display:block;height:100%;background:var(--origin)}
+.empty{font-size:13px;color:var(--ink-3);padding:10px 0}
+
+/* ---------- scan viewer ---------- */
+.scan{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px;align-items:start}
+.canvasbox{position:relative;background:var(--film);border:1px solid var(--line-strong);border-radius:3px;padding:12px}
+canvas{width:100%;height:auto;display:block;border-radius:2px;image-rendering:auto}
+.ctrl{display:flex;gap:10px;align-items:center;margin-top:12px}
+input[type=range]{flex:1;accent-color:var(--accent)}
+.legend{display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--ink-2)}
+.legend .item{display:flex;gap:9px;align-items:flex-start}
+.swatch{width:13px;height:13px;border-radius:2px;flex:0 0 auto;margin-top:3px}
+.btn{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;
+  padding:5px 10px;border-radius:2px;cursor:pointer;
+}
+.btn:hover{border-color:var(--line-strong)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.readout{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:10px}
+
+/* ---------- cohort ---------- */
+.grid2{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+.grid2 figure{margin:0}
+figcaption{font-size:12.5px;color:var(--ink-3);margin-top:10px;max-width:56ch}
+.chartsvg{width:100%;height:auto;display:block;overflow:visible}
+.keyrow{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-bottom:10px}
+.keyrow span{display:flex;gap:7px;align-items:center}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:3px;background:var(--surface)}
+th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:400}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;margin-top:8px}
+.note h3{font-family:var(--sans);font-size:14px;font-weight:600;margin-bottom:5px}
+.note p{margin:0;color:var(--ink-2);font-size:13.5px}
+code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:2px}
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--ink-3);font-size:12.5px}
+
+@media (max-width:980px){
+  .stage{grid-template-columns:96px minmax(0,1fr)}
+  .blist{grid-column:1/-1;max-height:none;flex-direction:row;overflow-x:auto;overflow-y:hidden}
+  .bcard{flex:0 0 210px}
+  .scan{grid-template-columns:minmax(0,1fr)}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .rulerpanel{display:none}
+  .stats{gap:24px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow"><span>Branchseed &middot; Toralis Labs</span><i class="rule"></i><span id="ncases">25 CT angiograms</span></p>
+  <h1>The aorta, <em>unrolled</em></h1>
+  <p class="thesis">Finding where arteries leave the aorta is a hunt through hundreds of cross-sections. Cut the aortic wall open along its length and flatten it, and the hunt becomes a reading: every origin is a mark at a distance and a clock position. Same data, one glance.</p>
+  <div class="stats" id="stats"></div>
+</header>
+
+<section id="case">
+  <div class="shead"><h2>One aorta, laid flat</h2><span class="tag">per case</span></div>
+  <p class="lede">Vertical is distance down the supplied aortic segment. Horizontal is the position round the wall, written the way it is spoken in theatre: twelve o'clock is anterior, three is the patient's left. Brightness is how far contrast-filled tissue continues outward from the wall, so an origin shows as a bright blob and plain fat shows as nothing.</p>
+  <div class="picker" id="picker" role="group" aria-label="Choose a case"></div>
+
+  <div class="stage" id="stage">
+    <div class="panel rulerpanel">
+      <p class="panel-hd">Calibre</p>
+      <svg id="ruler" class="chartsvg" role="img" aria-label="Aortic diameter down the segment, with branch-free stretches marked"></svg>
+    </div>
+    <div class="panel filmbox">
+      <div class="mapwrap" id="mapwrap">
+        <img id="unwrapimg" alt="Flattened map of the aortic wall for the selected case">
+        <div id="pins" aria-hidden="true"><i class="noon"></i></div>
+      </div>
+      <div class="clockaxis"><span>6</span><span>9</span><span>12 o'clock</span><span>3</span><span>6</span></div>
+    </div>
+    <div class="panel">
+      <p class="panel-hd">Origins found</p>
+      <div class="blist" id="blist"></div>
+    </div>
+  </div>
+</section>
+
+<section id="verify">
+  <div class="shead"><h2>Check it against the scan</h2><span class="tag">verification</span></div>
+  <p class="lede">The flattened map is a claim about the scan, so it has to be answerable in the scan. Every slice below is resampled into the same patient-aligned frame, anterior up and the patient's left to the right, centred on the aorta. Pick an origin and the viewer jumps to the slice it was found on.</p>
+  <div class="scan">
+    <div class="canvasbox">
+      <canvas id="ctcanvas" width="660" height="660"></canvas>
+      <div class="ctrl">
+        <button class="btn" id="prev" aria-label="Previous slice">&larr;</button>
+        <input type="range" id="slider" min="0" max="1" value="0" aria-label="Slice position">
+        <button class="btn" id="next" aria-label="Next slice">&rarr;</button>
+        <button class="btn" id="maskbtn" aria-pressed="true">Aorta mask</button>
+      </div>
+      <p class="readout mono" id="readout"></p>
+    </div>
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:#6EE2FF"></span><span>Supplied parent mask. The daughters are in the image but never in this mask.</span></div>
+      <div class="item"><span class="swatch" style="background:var(--origin)"></span><span>Detected ostium centre, with the initial direction drawn as it projects into the slice.</span></div>
+      <div class="item"><span class="swatch" style="background:var(--accent)"></span><span>Seed point, five millimetres along the daughter from the opening.</span></div>
+      <p style="margin:6px 0 0;font-size:12.5px;color:var(--ink-3)">Markers fade as you scrub away from the slice the origin sits on.</p>
+    </div>
+  </div>
+</section>
+
+<section id="cohort">
+  <div class="shead"><h2>Where branches actually live</h2><span class="tag">all cases</span></div>
+  <p class="lede">Nothing here is labelled with an anatomical name and nothing is looked up in a textbook. These are every origin the pipeline found, pooled and plotted by clock position and by depth into the segment. The clusters are the anatomy reappearing on its own: a crowd at twelve o'clock, a pair of wings out to three and nine.</p>
+  <div class="grid2">
+    <figure>
+      <svg id="rose" class="chartsvg" viewBox="0 0 340 340" role="img" aria-label="Polar histogram of origin clock positions across all cases"></svg>
+      <figcaption id="rosecap"></figcaption>
+    </figure>
+    <figure>
+      <div class="keyrow">
+        <span><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="var(--origin)"></circle></svg>one origin, area scaled to lumen radius</span>
+      </div>
+      <svg id="scatter" class="chartsvg" viewBox="0 0 700 420" role="img" aria-label="Every origin plotted by clock position and distance from the top of the supplied segment"></svg>
+      <figcaption>Depth is measured from the top of whatever aortic segment the scan happened to cover, so cases with different coverage are not forced onto a shared landmark. Hover a point to see which case it came from.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="zones">
+  <div class="shead"><h2>Where a device could sit</h2><span class="tag">landing zones</span></div>
+  <p class="lede">Turn the same origins inside out and they describe the gaps between themselves. For anyone sizing a graft, the useful number is not how many branches there are but the longest stretch of wall with none, and how wide the aorta is along it.</p>
+  <div class="keyrow">
+    <span><svg width="13" height="9"><rect width="13" height="9" rx="1" fill="var(--zone)"></rect></svg>longest branch-free stretch</span>
+    <span><svg width="13" height="9"><rect width="13" height="9" rx="1" fill="var(--origin)" opacity=".28"></rect></svg>rest of the supplied segment</span>
+  </div>
+  <svg id="zonechart" class="chartsvg" role="img" aria-label="Longest branch-free stretch of aorta in each case"></svg>
+</section>
+
+<section id="method">
+  <div class="shead"><h2>How it reads the scan</h2><span class="tag">method</span></div>
+  <p class="lede">Classical image processing end to end. No training data, no GPU, no network, and nothing tuned per case: every number below comes from the same code path run on all twenty-five volumes.</p>
+  <div class="notes">
+    <div class="note"><h3>1 &middot; Learn this scan's contrast</h3><p>Aortic opacification runs from about 85 to 580 HU across the set, so any fixed threshold fails somewhere. The window is read off the lumen itself, then pushed down only as far as the wall will take before neighbouring liver and bowel start counting as vessel.</p></div>
+    <div class="note"><h3>2 &middot; One footprint, one ostium</h3><p>Where bright tissue meets the wall it leaves a patch. Separate patches are separate daughters; a common trunk leaves a single patch however soon it divides, which is exactly the rule the brief sets out.</p></div>
+    <div class="note"><h3>3 &middot; Grow outward, never sideways</h3><p>Labels spread away from the wall in order of distance from it. A voxel can only inherit from something nearer the aorta, so two branches cannot fuse and a leak into adjacent tissue stays attached to the origin it came from instead of swallowing the abdomen.</p></div>
+    <div class="note"><h3>4 &middot; Walk the first ten millimetres</h3><p>Each branch is followed shell by shell to the first bifurcation or ten millimetres, whichever comes first. The seed sits five millimetres along that path; the direction is a line fit to it; the radius is measured on a half-maximum contour in the plane across it, which keeps it sub-voxel on 1.5 mm scans.</p></div>
+  </div>
+  <div class="tablewrap" style="margin-top:26px">
+    <table>
+      <thead><tr><th>Case</th><th>Volume</th><th>Voxel</th><th>Lumen</th><th>Segment</th><th>Origins</th><th>Longest clear</th><th>Runtime</th></tr></thead>
+      <tbody id="runtable"></tbody>
+    </table>
+  </div>
+  <p class="readout" id="runsum"></p>
+</section>
+
+<footer>
+  <p>Built for the Branchseed challenge. Predictions are written as <code>prediction.json</code> per case in physical millimetres, through <code>python run.py --image image.nii.gz --aorta-mask aorta_mask.nii.gz --output prediction.json</code>. Every figure on this page is generated from those outputs; nothing is drawn by hand.</p>
+</footer>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+"use strict";
+const A = window.ATLAS;
+const cases = A.cases;
+const MAPH = 620;
+const css = getComputedStyle(document.documentElement);
+const tok = n => css.getPropertyValue(n).trim();
+
+document.documentElement.style.setProperty('--maph', MAPH + 'px');
+
+/* ---------------- helpers ---------------- */
+const el = (tag, attrs, kids) => {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in (attrs||{})) n.setAttribute(k, attrs[k]);
+  (kids||[]).forEach(c => n.appendChild(c));
+  return n;
+};
+const txt = (x,y,s,o) => {
+  const t = el("text", Object.assign({x:x, y:y, "font-family":"IBM Plex Mono, monospace",
+    "font-size":10.5, fill:"currentColor"}, o||{}));
+  t.textContent = s; return t;
+};
+// clock 0 (anterior) sits in the middle of the strip, 180 at both edges
+const clockToFrac = d => (((d + 180) % 360) + 360) % 360 / 360;
+const clockLabel = d => {
+  const h = ((d/30) + 12) % 12;
+  const hh = Math.floor(h) === 0 ? 12 : Math.floor(h);
+  const mm = Math.round((h - Math.floor(h)) * 60);
+  return hh + ":" + String(mm).padStart(2,"0");
+};
+
+/* ---------------- masthead stats ---------------- */
+const allBranches = [];
+cases.forEach(c => c.daughters.forEach(b => allBranches.push(Object.assign({case_id:c.case_id}, b))));
+const times = cases.map(c => c.seconds).sort((a,b)=>a-b);
+const median = a => a.length % 2 ? a[(a.length-1)/2] : (a[a.length/2-1]+a[a.length/2])/2;
+const bestZone = c => c.landing_zones.reduce((m,z)=> z.length_mm > (m?m.length_mm:-1) ? z : m, null);
+
+document.getElementById("ncases").textContent = cases.length + " CT angiograms";
+const statDefs = [
+  [cases.length, "cases processed"],
+  [allBranches.length, "origins found"],
+  [median(times).toFixed(1) + "s", "median runtime per case"],
+  [Math.round(median(cases.map(c=>c.aorta_length_mm).sort((a,b)=>a-b))) + " mm", "median segment supplied"],
+];
+document.getElementById("stats").innerHTML = statDefs.map(([n,k]) =>
+  `<div class="stat"><div class="n mono">${n}</div><div class="k">${k}</div></div>`).join("");
+
+/* ---------------- case picker ---------------- */
+let current = 0;
+const picker = document.getElementById("picker");
+cases.forEach((c,i) => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.type = "button";
+  b.setAttribute("aria-pressed", i===0 ? "true" : "false");
+  b.innerHTML = `<b>${c.case_id.replace("subject","")}</b><span class="dot"></span>${c.daughters.length}`;
+  b.title = c.case_id + " — " + c.daughters.length + " origins";
+  b.addEventListener("click", () => selectCase(i));
+  picker.appendChild(b);
+});
+
+/* ---------------- stage ---------------- */
+const img = document.getElementById("unwrapimg");
+const pins = document.getElementById("pins");
+const blist = document.getElementById("blist");
+const ruler = document.getElementById("ruler");
+let selected = -1;
+
+function arcFrac(c, s){
+  const lo = c.unwrap.arc_min, hi = c.unwrap.arc_max;
+  return hi > lo ? (s - lo) / (hi - lo) : 0;
+}
+
+function drawRuler(c){
+  const W = 96, H = MAPH, cx = 40;
+  ruler.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  ruler.setAttribute("height", H);
+  ruler.style.color = tok("--ink-3");
+  ruler.replaceChildren();
+
+  const maxD = Math.max(...c.profile.map(p=>p.d), 12);
+  const scale = 34 / maxD;                    // mm -> px, half-width
+  const pts = c.profile.map(p => [cx - p.d/2*scale, arcFrac(c,p.s)*H]);
+  const back = c.profile.map(p => [cx + p.d/2*scale, arcFrac(c,p.s)*H]).reverse();
+  const d = "M" + pts.concat(back).map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join("L") + "Z";
+  ruler.appendChild(el("path",{d:d, fill:tok("--surface-2"), stroke:tok("--line-strong"),
+    "stroke-width":1}));
+
+  // branch-free stretches
+  c.landing_zones.forEach(z => {
+    const y0 = arcFrac(c, z.start_mm)*H, y1 = arcFrac(c, z.end_mm)*H;
+    ruler.appendChild(el("rect",{x:cx+22, y:y0, width:4, height:Math.max(y1-y0,1),
+      rx:2, fill:tok("--zone")}));
+    if (y1 - y0 > 34){
+      const t = txt(cx+30, (y0+y1)/2 + 3, z.length_mm.toFixed(0)+"mm", {fill:tok("--zone"),"font-size":9.5});
+      ruler.appendChild(t);
+    }
+  });
+
+  // scale ticks every 20 mm
+  const lo = c.unwrap.arc_min, hi = c.unwrap.arc_max;
+  for (let s = Math.ceil(lo/20)*20; s <= hi; s += 20){
+    const y = arcFrac(c,s)*H;
+    ruler.appendChild(el("line",{x1:0,y1:y,x2:5,y2:y,stroke:tok("--line-strong"),"stroke-width":1}));
+    ruler.appendChild(txt(0, y-4, s.toFixed(0), {"font-size":9,fill:tok("--ink-3")}));
+  }
+  ruler.appendChild(txt(0, H-2, "mm", {"font-size":9, fill:tok("--ink-3")}));
+}
+
+function drawPins(c){
+  pins.querySelectorAll(".pin").forEach(n => n.remove());
+  c.daughters.forEach((b,i) => {
+    const p = document.createElement("div");
+    p.className = "pin"; p.dataset.i = i;
+    p.style.left = (clockToFrac(b.clock_deg)*100).toFixed(2) + "%";
+    p.style.top = (arcFrac(c, b.arc_mm)*100).toFixed(2) + "%";
+    p.innerHTML = "<b>" + (i+1) + "</b>";
+    p.addEventListener("mouseenter", () => highlight(i));
+    p.addEventListener("mouseleave", () => highlight(selected));
+    p.addEventListener("click", () => selectBranch(i, true));
+    pins.appendChild(p);
+  });
+}
+
+function drawList(c){
+  blist.replaceChildren();
+  if (!c.daughters.length){
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "No eligible daughter cleared the five-millimetre rule in this segment. "
+      + (c.rejected.length ? "Rejected candidates: " + c.rejected.map(r=>r.count+" "+r.reason).join("; ") + "." : "");
+    blist.appendChild(p); return;
+  }
+  c.daughters.forEach((b,i) => {
+    const btn = document.createElement("button");
+    btn.className = "bcard"; btn.type = "button"; btn.dataset.i = i;
+    btn.innerHTML =
+      `<div class="row1"><span class="clock">${clockLabel(b.clock_deg)}</span><span class="id">${b.id}</span></div>
+       <div class="row2"><span>${b.arc_mm.toFixed(0)} mm down</span><span>r ${b.radius_mm.toFixed(2)} mm</span><span>${Math.round(b.hu)} HU</span></div>
+       <div class="conf"><i style="width:${Math.round(b.confidence*100)}%"></i></div>`;
+    btn.addEventListener("click", () => selectBranch(i, true));
+    btn.addEventListener("mouseenter", () => highlight(i));
+    btn.addEventListener("mouseleave", () => highlight(selected));
+    blist.appendChild(btn);
+  });
+}
+
+function highlight(i){
+  pins.classList.toggle("dim", i >= 0);
+  pins.querySelectorAll(".pin").forEach(p => p.classList.toggle("on", Number(p.dataset.i) === i));
+  blist.querySelectorAll(".bcard").forEach(b => b.classList.toggle("on", Number(b.dataset.i) === i));
+}
+
+function selectBranch(i, jump){
+  selected = i;
+  highlight(i);
+  if (jump){
+    const c = cases[current], b = c.daughters[i];
+    const zs = c.slices.z_mm;
+    let best = 0, bd = Infinity;
+    zs.forEach((z,k) => { const d = Math.abs(z - b.slice_z); if (d < bd){ bd = d; best = k; } });
+    slider.value = best; drawSlice();
+  }
+}
+
+function selectCase(i){
+  current = i; selected = -1;
+  const c = cases[i];
+  picker.querySelectorAll(".chip").forEach((b,k) => b.setAttribute("aria-pressed", k===i ? "true":"false"));
+  img.src = "unwrap_" + c.case_id + ".png";
+  img.alt = "Flattened map of the aortic wall for " + c.case_id;
+  drawRuler(c); drawPins(c); drawList(c);
+  loadSprites(c);
+}
+
+/* ---------------- CT viewer ---------------- */
+const canvas = document.getElementById("ctcanvas");
+const ctx = canvas.getContext("2d");
+const slider = document.getElementById("slider");
+const readout = document.getElementById("readout");
+const maskbtn = document.getElementById("maskbtn");
+let ctSprite = null, maskSprite = null, showMask = true, spriteCase = null;
+
+function loadSprites(c){
+  spriteCase = c.case_id;
+  slider.max = c.slices.count - 1;
+  slider.value = Math.floor(c.slices.count/2);
+  ctSprite = new Image(); maskSprite = new Image();
+  ctSprite.onload = drawSlice; maskSprite.onload = drawSlice;
+  ctSprite.src = "ct_" + c.case_id + ".jpg";
+  maskSprite.src = "mask_" + c.case_id + ".png";
+  drawSlice();
+}
+
+function drawSlice(){
+  const c = cases[current];
+  if (!c || spriteCase !== c.case_id) return;
+  const s = c.slices, k = Math.min(Number(slider.value), s.count-1);
+  const tile = s.tile_px, sx = (k % s.cols)*tile, sy = Math.floor(k/s.cols)*tile;
+  const W = canvas.width;
+  ctx.fillStyle = tok("--film"); ctx.fillRect(0,0,W,W);
+  if (ctSprite && ctSprite.complete && ctSprite.naturalWidth)
+    ctx.drawImage(ctSprite, sx, sy, tile, tile, 0, 0, W, W);
+  if (showMask && maskSprite && maskSprite.complete && maskSprite.naturalWidth)
+    ctx.drawImage(maskSprite, sx, sy, tile, tile, 0, 0, W, W);
+
+  const scale = W / tile;
+  const pitch = s.pitch_mm;
+  const toPx = b => {
+    const col = (b.slice_left - s.centre_left[k]) / pitch + (tile-1)/2;
+    const row = (tile-1) - ((b.slice_anterior - s.centre_anterior[k]) / pitch + (tile-1)/2);
+    return [col*scale, row*scale];
+  };
+
+  let visible = 0;
+  c.daughters.forEach((b,i) => {
+    const dz = Math.abs(b.slice_z - s.z_mm[k]);
+    const fade = Math.max(0, 1 - dz/9);
+    if (fade <= 0.02) return;
+    visible++;
+    const [px,py] = toPx(b);
+    ctx.globalAlpha = fade * (selected < 0 || selected === i ? 1 : .45);
+    // direction, projected into the slice plane
+    const dx = b.dir_left, dy = -b.dir_anterior;
+    const L = Math.hypot(dx,dy);
+    if (L > 0.08){
+      const ax = dx/L*38, ay = dy/L*38;
+      ctx.strokeStyle = tok("--accent"); ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+ax, py+ay); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(px+ax, py+ay);
+      ctx.lineTo(px+ax-ay*0.22-ax*0.22, py+ay+ax*0.22-ay*0.22);
+      ctx.lineTo(px+ax+ay*0.22-ax*0.22, py+ay-ax*0.22-ay*0.22);
+      ctx.closePath(); ctx.fillStyle = tok("--accent"); ctx.fill();
+    }
+    ctx.strokeStyle = tok("--origin");
+    ctx.lineWidth = selected === i ? 3.5 : 2.2;
+    ctx.beginPath(); ctx.arc(px, py, Math.max(b.radius_mm/pitch*scale, 7), 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = tok("--origin");
+    ctx.font = "500 13px IBM Plex Mono, monospace";
+    ctx.fillText(String(i+1), px + 11, py - 9);
+    ctx.globalAlpha = 1;
+  });
+
+  readout.textContent = `${c.case_id} · slice ${k+1} of ${s.count} · `
+    + `${s.fov_mm.toFixed(0)} mm field of view · ${visible} origin${visible===1?"":"s"} near this level`;
+}
+
+slider.addEventListener("input", drawSlice);
+document.getElementById("prev").addEventListener("click", () => { slider.value = Math.max(0, Number(slider.value)-1); drawSlice(); });
+document.getElementById("next").addEventListener("click", () => { slider.value = Math.min(Number(slider.max), Number(slider.value)+1); drawSlice(); });
+maskbtn.addEventListener("click", () => { showMask = !showMask; maskbtn.setAttribute("aria-pressed", String(showMask)); drawSlice(); });
+
+/* ---------------- clock rose ---------------- */
+(function(){
+  const svg = document.getElementById("rose");
+  svg.style.color = tok("--ink-3");
+  const cx = 170, cy = 170, r0 = 34, rmax = 122, bins = 24;
+  const counts = new Array(bins).fill(0);
+  allBranches.forEach(b => counts[Math.floor((((b.clock_deg%360)+360)%360)/(360/bins)) % bins]++);
+  const top = Math.max(...counts, 1);
+
+  [1,0.5].forEach(f => svg.appendChild(el("circle",{cx,cy,r:r0+(rmax-r0)*f,fill:"none",
+    stroke:tok("--line"),"stroke-width":1})));
+  svg.appendChild(el("circle",{cx,cy,r:r0,fill:"none",stroke:tok("--line-strong"),"stroke-width":1}));
+
+  counts.forEach((n,i) => {
+    if (!n) return;
+    const a0 = (i*360/bins - 90) * Math.PI/180, a1 = ((i+1)*360/bins - 90) * Math.PI/180;
+    const rr = r0 + (rmax-r0) * (n/top);
+    const p = [
+      [cx+Math.cos(a0)*r0, cy+Math.sin(a0)*r0],
+      [cx+Math.cos(a0)*rr, cy+Math.sin(a0)*rr],
+      [cx+Math.cos(a1)*rr, cy+Math.sin(a1)*rr],
+      [cx+Math.cos(a1)*r0, cy+Math.sin(a1)*r0]];
+    const d = `M${p[0]}L${p[1]}A${rr} ${rr} 0 0 1 ${p[2]}L${p[3]}A${r0} ${r0} 0 0 0 ${p[0]}Z`;
+    const path = el("path",{d, fill:tok("--origin"), "fill-opacity":.82, stroke:tok("--surface"),
+      "stroke-width":1});
+    path.appendChild(el("title",{},[]));
+    path.lastChild.textContent = `${n} origins between ${(i*360/bins)}° and ${((i+1)*360/bins)}°`;
+    svg.appendChild(path);
+  });
+
+  const marks = [[0,"12",null,"anterior"],[90,"3","patient's left",null],
+                 [180,"6",null,"posterior"],[270,"9","patient's right",null]];
+  marks.forEach(([deg,lab,side,stack]) => {
+    const a = (deg-90)*Math.PI/180;
+    const px = cx+Math.cos(a)*(rmax+22), py = cy+Math.sin(a)*(rmax+22);
+    svg.appendChild(txt(px, py+4, lab, {"text-anchor":"middle","font-size":13,fill:tok("--ink-2")}));
+    if (stack) svg.appendChild(txt(px, deg===0 ? py-10 : py+17, stack,
+      {"text-anchor":"middle","font-size":9.5,fill:tok("--ink-3")}));
+    if (side) svg.appendChild(txt(px, py+16, side,
+      {"text-anchor":"middle","font-size":9.5,fill:tok("--ink-3")}));
+  });
+  svg.appendChild(txt(cx, cy+4, String(allBranches.length), {"text-anchor":"middle",
+    "font-size":17, fill:tok("--ink-2"), "font-family":"Instrument Serif, serif"}));
+
+  const ant = counts.slice(0,3).concat(counts.slice(21)).reduce((a,b)=>a+b,0);
+  document.getElementById("rosecap").textContent =
+    `Each wedge is fifteen degrees of wall, its length the number of origins found there across all ${cases.length} cases. `
+    + `${Math.round(100*ant/allBranches.length)} per cent sit within forty-five degrees of twelve o'clock, which is where the coeliac and mesenteric vessels leave. `
+    + `The tallest wedge holds ${top}.`;
+})();
+
+/* ---------------- scatter ---------------- */
+(function(){
+  const svg = document.getElementById("scatter");
+  svg.style.color = tok("--ink-3");
+  const L=52, R=14, T=36, B=38, W=700, H=420;
+  const maxDepth = Math.max(...allBranches.map(b=>b.arc_mm), 60);
+  const x = f => L + f*(W-L-R);
+  const y = d => T + (d/maxDepth)*(H-T-B);
+
+  svg.appendChild(el("rect",{x:L,y:T,width:W-L-R,height:H-T-B,fill:tok("--surface"),
+    stroke:tok("--line"),"stroke-width":1}));
+  [0,0.25,0.5,0.75,1].forEach((f,i) => {
+    svg.appendChild(el("line",{x1:x(f),y1:T,x2:x(f),y2:H-B,stroke:tok("--line"),"stroke-width":1,
+      "stroke-dasharray": f===0.5 ? "none" : "3 5"}));
+    svg.appendChild(txt(x(f), H-B+16, ["6","9","12","3","6"][i],
+      {"text-anchor":"middle","font-size":11,fill: f===0.5 ? tok("--ink-2") : tok("--ink-3")}));
+  });
+  svg.appendChild(txt((L+W-R)/2, H-B+32, "clock position on the aortic wall",
+    {"text-anchor":"middle","font-size":10.5,fill:tok("--ink-3")}));
+  for (let d=0; d<=maxDepth; d+=40){
+    svg.appendChild(el("line",{x1:L-4,y1:y(d),x2:L,y2:y(d),stroke:tok("--line-strong"),"stroke-width":1}));
+    svg.appendChild(txt(L-8, y(d)+4, String(d), {"text-anchor":"end","font-size":10,fill:tok("--ink-3")}));
+  }
+  svg.appendChild(txt(0, 13, "millimetres below the top of the supplied segment",
+    {"font-size":10.5,fill:tok("--ink-3")}));
+
+  allBranches.forEach(b => {
+    const c = el("circle",{cx:x(clockToFrac(b.clock_deg)), cy:y(b.arc_mm),
+      r: Math.max(2.4, Math.min(9, b.radius_mm*2.1)),
+      fill:tok("--origin"), "fill-opacity":.42, stroke:tok("--origin"),
+      "stroke-opacity":.85, "stroke-width":1});
+    const t = el("title",{},[]);
+    t.textContent = `${b.case_id} · ${b.id} · ${clockLabel(b.clock_deg)} · ${b.arc_mm.toFixed(0)} mm down · r ${b.radius_mm.toFixed(2)} mm`;
+    c.appendChild(t);
+    svg.appendChild(c);
+  });
+})();
+
+/* ---------------- landing zones ---------------- */
+(function(){
+  const svg = document.getElementById("zonechart");
+  svg.style.color = tok("--ink-3");
+  const rowH = 20, L = 84, R = 58, T = 22, W = 900;
+  const H = T + cases.length*rowH + 26;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const maxLen = Math.max(...cases.map(c=>c.aorta_length_mm));
+  const x = mm => L + (mm/maxLen)*(W-L-R);
+
+  for (let mm=0; mm<=maxLen; mm+=50){
+    svg.appendChild(el("line",{x1:x(mm),y1:T-8,x2:x(mm),y2:H-20,stroke:tok("--line"),"stroke-width":1}));
+    svg.appendChild(txt(x(mm), T-12, String(mm), {"text-anchor":"middle","font-size":10,fill:tok("--ink-3")}));
+  }
+  svg.appendChild(txt(W-R+6, T-12, "mm", {"font-size":10,fill:tok("--ink-3")}));
+
+  const sorted = cases.slice().sort((a,b) => (bestZone(b)?.length_mm||0) - (bestZone(a)?.length_mm||0));
+  sorted.forEach((c,i) => {
+    const yy = T + i*rowH;
+    svg.appendChild(txt(L-8, yy+11, c.case_id.replace("subject",""),
+      {"text-anchor":"end","font-size":10.5,fill:tok("--ink-2")}));
+    svg.appendChild(el("rect",{x:L, y:yy+4, width:x(c.aorta_length_mm)-L, height:11, rx:1,
+      fill:tok("--origin"), "fill-opacity":.16}));
+    const z = bestZone(c);
+    if (z){
+      svg.appendChild(el("rect",{x:x(z.start_mm), y:yy+4, width:Math.max(x(z.end_mm)-x(z.start_mm),2),
+        height:11, rx:1, fill:tok("--zone")}));
+      svg.appendChild(txt(x(c.aorta_length_mm)+7, yy+13,
+        `${z.length_mm.toFixed(0)} mm clear · ⌀ ${z.min_diameter_mm.toFixed(0)} mm`,
+        {"font-size":10,fill:tok("--ink-2")}));
+    } else {
+      svg.appendChild(txt(x(c.aorta_length_mm)+7, yy+13, "—", {"font-size":10,fill:tok("--ink-3")}));
+    }
+  });
+  svg.appendChild(txt(L, H-6, "each row is one case, plotted along the aortic segment that scan supplied",
+    {"font-size":10,fill:tok("--ink-3")}));
+})();
+
+/* ---------------- runtime table ---------------- */
+(function(){
+  const tb = document.getElementById("runtable");
+  tb.innerHTML = cases.map(c => {
+    const z = bestZone(c);
+    return `<tr><td>${c.case_id}</td>
+      <td class="num">${c.voxels.join("×")}</td>
+      <td class="num">${c.spacing_mm.map(v=>v.toFixed(2)).join("×")}</td>
+      <td class="num">${c.lumen_hu} HU</td>
+      <td class="num">${c.aorta_length_mm.toFixed(0)} mm</td>
+      <td class="num">${c.daughters.length}</td>
+      <td class="num">${z ? z.length_mm.toFixed(0)+" mm" : "—"}</td>
+      <td class="num">${c.seconds.toFixed(1)} s</td></tr>`;
+  }).join("");
+  const worst = Math.max(...times);
+  document.getElementById("runsum").textContent =
+    `Median ${median(times).toFixed(1)} s, slowest ${worst.toFixed(1)} s, single-threaded on CPU with peak memory under 2 GB, `
+    + `against a brief that allows sixty seconds a case on four cores and eight gigabytes. `
+    + `Cost tracks the length of aorta supplied rather than the file size, so the one case that runs long is the one carrying `
+    + `a segment roughly three times the median.`;
+})();
+
+selectCase(0);
+})();
+</script>
