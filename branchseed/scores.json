@@ -1,0 +1,103 @@
+{
+ "reference": {
+  "cases": 5,
+  "instances": 19,
+  "status": "draft, expert review pending, not certified exhaustive",
+  "spacing_mm": 1.5,
+  "policy_min_origin_diameter_mm": 2.0,
+  "match_tolerance_mm": 6.0
+ },
+ "overall": {
+  "tp": 13,
+  "fp": 21,
+  "fn": 6,
+  "precision": 0.382,
+  "recall": 0.684,
+  "f1": 0.491,
+  "ostium_med": 1.47,
+  "ostium_mean": 1.96,
+  "seed_med": 0.69,
+  "angle_med": 18.8,
+  "radius_med_abs": 0.54
+ },
+ "per_case": [
+  {
+   "case_id": "subject019",
+   "reference": 3,
+   "predicted": 3,
+   "hit": 2,
+   "false_positive": 1,
+   "missed": 1,
+   "median_ostium_mm": 0.75
+  },
+  {
+   "case_id": "subject020",
+   "reference": 4,
+   "predicted": 2,
+   "hit": 2,
+   "false_positive": 0,
+   "missed": 2,
+   "median_ostium_mm": 3.05
+  },
+  {
+   "case_id": "subject021",
+   "reference": 3,
+   "predicted": 7,
+   "hit": 3,
+   "false_positive": 4,
+   "missed": 0,
+   "median_ostium_mm": 3.16
+  },
+  {
+   "case_id": "subject022",
+   "reference": 6,
+   "predicted": 17,
+   "hit": 5,
+   "false_positive": 12,
+   "missed": 1,
+   "median_ostium_mm": 1.42
+  },
+  {
+   "case_id": "subject023",
+   "reference": 3,
+   "predicted": 5,
+   "hit": 1,
+   "false_positive": 4,
+   "missed": 2,
+   "median_ostium_mm": 2.56
+  }
+ ],
+ "leave_one_out": [
+  {
+   "without": "subject019",
+   "f1": 0.468,
+   "precision": 0.355,
+   "recall": 0.688
+  },
+  {
+   "without": "subject020",
+   "f1": 0.468,
+   "precision": 0.344,
+   "recall": 0.733
+  },
+  {
+   "without": "subject021",
+   "f1": 0.465,
+   "precision": 0.37,
+   "recall": 0.625
+  },
+  {
+   "without": "subject022",
+   "f1": 0.533,
+   "precision": 0.471,
+   "recall": 0.615
+  },
+  {
+   "without": "subject023",
+   "f1": 0.533,
+   "precision": 0.414,
+   "recall": 0.75
+  }
+ ],
+ "inter_expert_mm": 2.5
+}

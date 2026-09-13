@@ -193,6 +193,12 @@ def export_case(record, out_dir: str):
     os.makedirs(out_dir, exist_ok=True)
 
     unwrap_meta = unwrap_image(record["unwrap"], os.path.join(out_dir, f"unwrap_{case}.png"))
+    side_meta = side_sprites(record, dict(
+        coronal_ct=os.path.join(out_dir, f"cor_{case}.jpg"),
+        coronal_mask=os.path.join(out_dir, f"cormask_{case}.png"),
+        sagittal_ct=os.path.join(out_dir, f"sag_{case}.jpg"),
+        sagittal_mask=os.path.join(out_dir, f"sagmask_{case}.png")))
+    evid_meta = evidence_sprite(record, os.path.join(out_dir, f"evid_{case}.jpg"))
     sprite_meta = slice_sprites(record,
                                 os.path.join(out_dir, f"ct_{case}.jpg"),
                                 os.path.join(out_dir, f"mask_{case}.png"))
@@ -214,7 +220,6 @@ def export_case(record, out_dir: str):
                             if c["bifurcation_mm"] else None),
             parent_radius_mm=round(float(c["parent_radius_mm"]), 2),
             confidence=c.get("confidence", 0.0),
-            radius_low_confidence=bool(c.get("radius_low_confidence", False)),
             hu=round(float(c["path_hu_median"]), 0),
             ostium_xyz_mm=[round(float(x), 2) for x in c["ostium_xyz_mm"]],
             seed_xyz_mm=[round(float(x), 2) for x in c["seed_xyz_mm"]],
@@ -262,6 +267,8 @@ def export_case(record, out_dir: str):
         landing_zones=landing_zones(record),
         unwrap=unwrap_meta,
         slices=sprite_meta,
+        side=side_meta,
+        evidence=evid_meta,
     )
 
 
@@ -273,3 +280,146 @@ def write_atlas(entries, out_dir: str):
     with open(os.path.join(out_dir, "atlas.json"), "w") as fh:
         json.dump(payload, fh, separators=(",", ":"))
     return os.path.join(out_dir, "atlas.json")
+
+
+# --------------------------------------------------------------------------- #
+# coronal and sagittal stacks, and per-branch evidence
+# --------------------------------------------------------------------------- #
+
+SIDE_SLICES = 12
+SIDE_FOV_MM = 96.0
+SIDE_MAX_PX = 560
+SIDE_SLAB_MM = 6.0
+EVID_PX = 132
+EVID_PITCH = 0.40
+EVID_SLAB_MM = 5.0
+EVID_COLS = 6
+
+
+def _slab_max(ct, base_pts, normal, spacing, slab_mm, steps=5):
+    """Maximum-intensity projection through a slab, which is what makes a
+    vessel read as a continuous tube instead of a string of dots."""
+    offs = np.linspace(-slab_mm / 2.0, slab_mm / 2.0, steps)
+    best = None
+    for o in offs:
+        coords = np.moveaxis((base_pts + o * normal) / spacing, -1, 0)
+        s = ndi.map_coordinates(ct, coords, order=1, mode="constant", cval=-1000.0)
+        best = s if best is None else np.maximum(best, s)
+    return best
+
+
+def side_sprites(record, paths):
+    """Coronal and sagittal stacks through the aorta, slab-projected.
+
+    The axial view shows a branch as a bright dot that appears for a slice or
+    two. Cut along the body instead and the same branch is a spur running away
+    from the aorta over a centimetre, which is far harder to mistake for noise.
+    """
+    ct, aorta, spacing = record["ct"], record["aorta"], record["spacing"]
+    from pipeline import _anatomical_axes
+    anterior, left, superior = _anatomical_axes(record["volume"].affine, spacing)
+    pts = record["points_mm"]
+
+    u = pts @ left
+    a = pts @ anterior
+    z = pts @ superior
+    z0, z1 = float(z.min()) - 6.0, float(z.max()) + 6.0
+    length = max(z1 - z0, 20.0)
+
+    pitch = max(0.35, length / SIDE_MAX_PX)
+    h = int(min(round(length / pitch), SIDE_MAX_PX))
+    w = int(min(round(SIDE_FOV_MM / pitch), 320))
+
+    zs = z1 - (np.arange(h) + 0.5) * pitch                 # row 0 is superior
+    gs = (np.arange(w) + 0.5 - w / 2.0) * pitch            # column offset
+
+    window_lo = -120.0
+    window_hi = max(420.0, record["stats"]["lumen_median"] * 1.15)
+
+    meta = {}
+    for kind, axis, other, centre_axis in (
+            ("coronal", anterior, left, float(np.median(a))),
+            ("sagittal", left, anterior, float(np.median(u)))):
+        base = centre_axis + np.linspace(-18.0, 18.0, SIDE_SLICES)
+        in_plane = float(np.median(u)) if kind == "coronal" else float(np.median(a))
+
+        rows = int(np.ceil(SIDE_SLICES / 4))
+        sheet = np.zeros((rows * h, 4 * w), dtype=np.uint8)
+        overlay = np.zeros((rows * h, 4 * w, 4), dtype=np.uint8)
+
+        for i, off in enumerate(base):
+            grid = (zs[:, None, None] * superior[None, None, :]
+                    + (in_plane + gs)[None, :, None] * other[None, None, :]
+                    + off * axis[None, None, :])
+            hu = _slab_max(ct, grid, axis, spacing, SIDE_SLAB_MM)
+            coords = np.moveaxis(grid / spacing, -1, 0)
+            msk = ndi.map_coordinates(aorta.astype(np.float32), coords, order=1,
+                                      mode="constant", cval=0.0) > 0.5
+
+            r, c = divmod(i, 4)
+            y0, x0 = r * h, c * w
+            norm = np.clip((hu - window_lo) / (window_hi - window_lo), 0, 1)
+            sheet[y0:y0 + h, x0:x0 + w] = (norm * 255).astype(np.uint8)
+            edge = msk ^ ndi.binary_erosion(msk)
+            tile = np.zeros((h, w, 4), dtype=np.uint8)
+            tile[msk] = (92, 146, 230, 30)
+            tile[edge] = (46, 104, 200, 210)
+            overlay[y0:y0 + h, x0:x0 + w] = tile
+
+        Image.fromarray(sheet, mode="L").convert("RGB").save(
+            paths[kind + "_ct"], quality=72, optimize=True)
+        Image.fromarray(overlay, mode="RGBA").save(paths[kind + "_mask"], optimize=True)
+
+        meta[kind] = dict(
+            tile_w=w, tile_h=h, cols=4, rows=rows, count=SIDE_SLICES,
+            pitch_mm=round(pitch, 4),
+            z_top=round(z1, 2), in_plane=round(in_plane, 2),
+            offsets=[round(float(o), 2) for o in base],
+        )
+    return meta
+
+
+def evidence_sprite(record, out_path):
+    """One thumbnail per daughter, cut in the plane that best shows it.
+
+    A branch is most convincing in the plane that contains both its own
+    direction and the aortic axis, slab-projected so the whole proximal run is
+    in one picture. Every detection gets the same treatment, so the contact
+    sheet is a fair look rather than a selection of the good ones.
+    """
+    ct, spacing = record["ct"], record["spacing"]
+    ds = record["daughters"]
+    if not ds:
+        return None
+    window_lo = -120.0
+    window_hi = max(420.0, record["stats"]["lumen_median"] * 1.15)
+
+    n = len(ds)
+    rows = int(np.ceil(n / EVID_COLS))
+    sheet = np.zeros((rows * EVID_PX, EVID_COLS * EVID_PX), dtype=np.uint8)
+    g = (np.arange(EVID_PX) + 0.5 - EVID_PX / 2.0) * EVID_PITCH
+
+    for i, c in enumerate(ds):
+        d = np.asarray(c["direction_mm"], dtype=float)
+        d = d / max(np.linalg.norm(d), 1e-9)
+        t = np.asarray(record["tangents"][int(c["station"])], dtype=float)
+        e2 = t - np.dot(t, d) * d
+        if np.linalg.norm(e2) < 1e-6:
+            e2 = np.cross(d, [1.0, 0.0, 0.0])
+        e2 /= max(np.linalg.norm(e2), 1e-9)
+        nrm = np.cross(d, e2)
+
+        centre = np.asarray(c["ostium_mm"], dtype=float) + d * 6.0
+        grid = centre[None, None, :] + g[None, :, None] * d + g[::-1, None, None] * e2
+        hu = _slab_max(ct, grid, nrm, spacing, EVID_SLAB_MM)
+
+        r, col = divmod(i, EVID_COLS)
+        norm = np.clip((hu - window_lo) / (window_hi - window_lo), 0, 1)
+        sheet[r * EVID_PX:(r + 1) * EVID_PX,
+              col * EVID_PX:(col + 1) * EVID_PX] = (norm * 255).astype(np.uint8)
+
+    Image.fromarray(sheet, mode="L").convert("RGB").save(out_path, quality=74,
+                                                         optimize=True)
+    return dict(tile_px=EVID_PX, cols=EVID_COLS, rows=rows, count=n,
+                pitch_mm=EVID_PITCH, slab_mm=EVID_SLAB_MM,
+                centre_offset_mm=6.0)

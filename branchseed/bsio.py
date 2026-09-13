@@ -62,6 +62,16 @@ class Volume:
         lps = ras[:, :3] @ _RAS_TO_LPS.T
         return lps[0] if single else lps
 
+    def physical_to_index(self, point) -> np.ndarray:
+        """LPS millimetres back to a fractional voxel index (i, j, k)."""
+        point = np.asarray(point, dtype=float)
+        single = point.ndim == 1
+        pts = np.atleast_2d(point)
+        ras = pts @ np.linalg.inv(_RAS_TO_LPS).T
+        homogeneous = np.concatenate([ras, np.ones((len(ras), 1))], axis=1)
+        idx = homogeneous @ np.linalg.inv(self.affine).T
+        return idx[0, :3] if single else idx[:, :3]
+
     def direction_to_physical(self, vec) -> np.ndarray:
         """Rotate a voxel-space direction into LPS mm space and normalise it."""
         vec = np.asarray(vec, dtype=float)

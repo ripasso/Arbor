@@ -225,28 +225,84 @@ def peel_dead_ends(labels, outside, spacing, present):
     return cleaned
 
 
+def bounding_box(mask, pad=2):
+    """Index box around a mask, with a little room to dilate into.
+
+    ``np.any`` along each pair of axes rather than ``find_objects``, which wants
+    an integer copy of the whole volume and is the more expensive of the two by
+    a wide margin when this is called once per label.
+    """
+    box = []
+    for axis in range(mask.ndim):
+        others = tuple(a for a in range(mask.ndim) if a != axis)
+        hit = np.any(mask, axis=others)
+        idx = np.nonzero(hit)[0]
+        if not idx.size:
+            return None
+        box.append(slice(max(0, int(idx[0]) - pad),
+                         min(mask.shape[axis], int(idx[-1]) + 1 + pad)))
+    return tuple(box)
+
+
 def trace_outward(component, outside, spacing, start_mask, start_point_mm,
                   max_path_mm=10.0):
     """Follow one branch outward, shell by shell, accumulating path length."""
     step = float(max(0.5, np.min(spacing) * 0.9))
     here = np.asarray(start_point_mm, dtype=float)
-    r0 = float(outside[start_mask].mean())
+
+    # This walks a structure of a few hundred voxels, so every dilation and
+    # relabel below should cost what that structure costs, not what the volume
+    # costs. Cropping to the label's own box is worth about two thirds of the
+    # detector's runtime.
+    box = bounding_box(component | start_mask)
+    if box is None:
+        return [(0.0, here)], None, 0.0
+    origin_mm = np.array([b.start for b in box], dtype=float) * spacing
+    component = component[box]
+    outside = outside[box]
+    start_mask = start_mask[box]
+    if not start_mask.any():
+        return [(0.0, here)], None, 0.0
+    # Start from the near edge of the footprint rather than its average depth.
+    # A patch cut obliquely through the wall has voxels at a range of distances,
+    # and starting at the mean can put the first shell past tissue that is
+    # actually there.
+    r0 = float(np.percentile(outside[start_mask], 25))
 
     path = [(0.0, here)]
     prev = start_mask
     travelled = 0.0
     bifurcation = None
 
+    # A shell is about one voxel thick, so on a 1.5 mm scan a vessel running
+    # obliquely can miss one entirely, and one dilation of the previous shell
+    # does not always reach across the gap. Treating that as the end of the
+    # vessel was deleting whole branches: a 500 voxel structure would come back
+    # with a path of one point and be dropped without ever reaching a filter.
+    # Two or three empty shells are tolerated, with the reach widened to match,
+    # before the trace is called finished.
+    max_gap = 3
+    misses = 0
+
     r = r0 + step
     while travelled < max_path_mm + 1e-6:
         shell = component & (outside >= r - step * 0.5) & (outside < r + step * 0.5)
         if not shell.any():
-            break
+            if misses >= max_gap:
+                break
+            misses += 1
+            r += step
+            continue
         lbl, n = ndi.label(shell, structure=CONN26)
-        touching = [int(t) for t in np.unique(lbl[ndi.binary_dilation(prev, CONN26) & shell])
-                    if t > 0]
+        reach = ndi.binary_dilation(prev, CONN26, iterations=1 + misses)
+        touching = [int(t) for t in np.unique(lbl[reach & shell]) if t > 0]
         if not touching:
-            break
+            if misses >= max_gap:
+                break
+            misses += 1
+            r += step
+            continue
+        misses = 0
         sizes = {t: int((lbl == t).sum()) for t in touching}
         biggest = max(sizes, key=sizes.get)
         if len(touching) > 1:
@@ -255,7 +311,7 @@ def trace_outward(component, outside, spacing, start_mask, start_point_mm,
                 bifurcation = travelled
                 break
         blob = lbl == biggest
-        pts = np.array(np.nonzero(blob), dtype=float).mean(axis=1) * spacing
+        pts = np.array(np.nonzero(blob), dtype=float).mean(axis=1) * spacing + origin_mm
         travelled += float(np.linalg.norm(pts - path[-1][1]))
         path.append((travelled, pts))
         prev = blob
@@ -294,21 +350,169 @@ def measure_radius(ct, vessel, seed_mm, direction_mm, spacing, hu_low,
                                  mode="constant", cval=0.0)
 
     centre = (n, n)
+    radial = np.hypot(gx, gy)
+
+    def anchor(mask):
+        """The pixel to call the middle of the lumen.
+
+        The seed comes off a path traced on a 1.5 mm grid, so it lands a
+        fraction of a voxel off centre as a matter of course. Insisting on the
+        exact centre pixel throws away a perfectly good cross-section whenever
+        it does, so anything lit within about a millimetre of the seed counts,
+        nearest first.
+        """
+        if mask[centre]:
+            return centre
+        reach = int(round(1.0 / step_mm))
+        lo_i, hi_i = max(0, n - reach), min(mask.shape[0], n + reach + 1)
+        lo_j, hi_j = max(0, n - reach), min(mask.shape[1], n + reach + 1)
+        window = mask[lo_i:hi_i, lo_j:hi_j]
+        if not window.any():
+            return None
+        ii, jj = np.nonzero(window)
+        off = np.hypot(ii + lo_i - n, jj + lo_j - n)
+        k = int(np.argmin(off))
+        return (int(ii[k] + lo_i), int(jj[k] + lo_j))
+
     peak = float(np.median(hu[n - 2:n + 3, n - 2:n + 3]))
-    ring = np.hypot(gx, gy) > half_extent_mm * 0.78
+    ring = radial > half_extent_mm * 0.78
     background = float(np.median(hu[ring])) if ring.any() else 0.0
     level = max(0.5 * (peak + background), hu_low * 0.75)
+    # Reading the peak and the background at a scale set by a first pass was
+    # tried here and moved the median error by 0.04 mm, which is a fortieth of
+    # a voxel, while letting several leaks back past the proportion filter. On
+    # a 1.5 mm grid a 2.5 mm artery is under two voxels across and the limit is
+    # the sampling, not the choice of level.
 
     binary = (hu >= level) & (inside > 0.25)
-    if not binary[centre]:
+    at = anchor(binary)
+    if at is None:
         binary = inside > 0.5
-        if not binary[centre]:
+        at = anchor(binary)
+        if at is None:
             return None
     lbl, _ = ndi.label(binary)
-    blob = lbl == lbl[centre]
+    blob = lbl == lbl[at]
     area = float(blob.sum()) * step_mm * step_mm
     dist = ndi.distance_transform_edt(blob, sampling=(step_mm, step_mm))
-    return float(min(np.sqrt(area / np.pi), max(float(dist[centre]) * 1.6, 0.4)))
+    # The area-equivalent radius is the measurement; the inscribed radius is
+    # only there to catch a cross-section that has leaked sideways into the
+    # parent or a neighbour, where the area balloons but the widest circle that
+    # fits inside does not. Anchoring that guard on the seed pixel instead of
+    # the widest point of the lumen made an off-centre seed read as a collapsed
+    # vessel, which was quietly deleting real branches at the size floor.
+    inscribed = float(dist.max())
+    return float(min(np.sqrt(area / np.pi), max(inscribed * 1.35, 0.4)))
+
+
+def split_arms(component, outside, spacing, wall_band, min_footprint_mm2=2.2,
+               min_arm_mm3=12.0, probe_lo_mm=2.5, probe_hi_mm=9.0,
+               probe_step_mm=0.75, max_arms=4):
+    """Separate a footprint that is serving more than one daughter.
+
+    "One footprint, one ostium" is the right rule and it is the one the brief
+    sets out, but it only holds if the footprints are actually separate at the
+    threshold the scan forced on us. A permissive threshold is what lets a faint
+    branch reach the wall at all, and the same permissiveness runs the contact
+    patches of two neighbouring arteries together into one. The count then
+    collapses: one patch, one ostium, and the second artery is gone.
+
+    So the number of instances is not settled at the wall. It is settled a few
+    millimetres out, where two vessels that shared a patch have visibly parted
+    and a single vessel has not. This walks a shell outward through the labelled
+    tissue, takes the distance at which it separates into the most arms that are
+    each big enough to be an artery, then propagates those arms back inward to
+    the wall so each one ends up owning its own piece of the footprint.
+
+    Returns a list of boolean masks. A single-element list means no split.
+    """
+    voxel_mm3 = float(np.prod(spacing))
+    face = float(np.sort(spacing)[0] * np.sort(spacing)[1])
+
+    # Everything below is local to this one label, and most labels are a few
+    # hundred voxels in a volume of tens of millions, so work in the label's own
+    # bounding box and paste the result back at the end. Without this the probe
+    # loop relabels the whole volume once per label per probe distance.
+    box = bounding_box(component)
+    if box is None:
+        return [component]
+    full_shape = component.shape
+    component = component[box]
+    outside = outside[box]
+    wall_band = wall_band[box]
+
+    def restore(mask):
+        out = np.zeros(full_shape, dtype=bool)
+        out[box] = mask
+        return out
+
+    best_arms, best_count = None, 1
+    probe = probe_lo_mm
+    while probe <= probe_hi_mm:
+        out_part = component & (outside >= probe)
+        if out_part.any():
+            lbl, n = ndi.label(out_part, structure=CONN26)
+            if n >= 2:
+                sizes = np.bincount(lbl.ravel())
+                keep = []
+                for i in range(1, n + 1):
+                    if sizes[i] * voxel_mm3 < min_arm_mm3:
+                        continue
+                    # a stub that stops as soon as it appears is a bulge on one
+                    # vessel, not a second vessel
+                    arm = lbl == i
+                    if float(outside[arm].max() - probe) < 3.0:
+                        continue
+                    keep.append(i)
+                if len(keep) > best_count:
+                    best_count = len(keep)
+                    best_arms = (lbl, keep[:max_arms], probe)
+        probe += probe_step_mm
+
+    if best_arms is None:
+        return [restore(component)]
+
+    lbl, keep, probe = best_arms
+    seeded = np.zeros(component.shape, dtype=np.int32)
+    for j, i in enumerate(keep, start=1):
+        seeded[lbl == i] = j
+
+    # Mirror of the outward growth that produced the label in the first place:
+    # claim unassigned tissue in order of *decreasing* distance from the aorta,
+    # so each arm walks back down its own path to the wall rather than across.
+    step = float(max(0.5, np.min(spacing) * 0.9))
+    r = probe
+    while r > -step:
+        target = component & (seeded == 0) & (outside >= r - step)
+        for _ in range(2):
+            if not target.any():
+                break
+            spread = ndi.maximum_filter(seeded, size=3, mode="nearest")
+            fill = target & (spread > 0)
+            if not fill.any():
+                break
+            seeded = np.where(fill, spread, seeded)
+            target = target & ~fill
+        r -= step
+
+    arms = []
+    for j in range(1, len(keep) + 1):
+        arm = seeded == j
+        if not arm.any():
+            continue
+        if float((arm & wall_band).sum()) * face < min_footprint_mm2:
+            continue
+        arms.append(arm)
+
+    # anything the arms failed to claim stays with the largest of them, so no
+    # tissue is silently dropped
+    if len(arms) < 2:
+        return [restore(component)]
+    leftover = component & ~np.any(arms, axis=0)
+    if leftover.any():
+        biggest = int(np.argmax([a.sum() for a in arms]))
+        arms[biggest] = arms[biggest] | leftover
+    return [restore(a) for a in arms]
 
 
 # --------------------------------------------------------------------------- #
@@ -342,10 +546,18 @@ def detect(ct, aorta, spacing, points_mm, arc_mm, tangents, u, v, merge_mm=2.6):
                 break
         groups.setdefault(target, []).append(k)
 
-    results = []
+    dilated_aorta = ndi.binary_dilation(aorta, CONN18)
+
+    parts = []
     for root, members in groups.items():
-        component = np.isin(labels, members)
-        patch = component & ndi.binary_dilation(aorta, CONN18)
+        whole = np.isin(labels, members)
+        if not (whole & dilated_aorta).any():
+            continue
+        parts.extend(split_arms(whole, outside, spacing, band))
+
+    results = []
+    for component in parts:
+        patch = component & dilated_aorta
         if not patch.any():
             continue
 
@@ -386,9 +598,20 @@ def detect(ct, aorta, spacing, points_mm, arc_mm, tangents, u, v, merge_mm=2.6):
         direction = fit_direction(6.5)
         radius = measure_radius(ct, vessel, seed_mm, direction, spacing, window["hu_low"])
         if radius is None:
+            # Fall back to the distance transform, but read it at the nearest
+            # voxel that is actually part of the branch. Reading it at the
+            # rounded seed returns zero whenever the seed rounds just outside
+            # the component, which is a measurement failure reported as a
+            # collapsed lumen.
+            edt = ndi.distance_transform_edt(component, sampling=spacing)
             seed_vox = np.clip(np.round(seed_mm / spacing).astype(int), 0,
                                np.array(ct.shape) - 1)
-            radius = float(ndi.distance_transform_edt(component, sampling=spacing)[tuple(seed_vox)])
+            if not component[tuple(seed_vox)]:
+                idx = np.array(np.nonzero(component), dtype=float)
+                if idx.size:
+                    off = (idx - seed_vox[:, None]) * spacing[:, None]
+                    seed_vox = idx[:, int(np.argmin((off ** 2).sum(axis=0)))].astype(int)
+            radius = float(edt[tuple(seed_vox)])
         else:
             scaled = float(np.clip(3.0 * radius, 3.0, 9.0))
             direction = fit_direction(scaled)

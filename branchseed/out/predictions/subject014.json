@@ -1,0 +1,68 @@
+{
+  "case_id": "subject014",
+  "parent": {
+    "instance_id": "aorta"
+  },
+  "daughters": [
+    {
+      "instance_id": "branch_001",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        9.49,
+        3.89,
+        1489.46
+      ],
+      "seed_xyz_mm": [
+        10.06,
+        1.54,
+        1486.34
+      ],
+      "radius_mm": 2.57,
+      "direction_xyz": [
+        0.1948,
+        -0.5454,
+        -0.8153
+      ]
+    },
+    {
+      "instance_id": "branch_002",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -3.85,
+        8.1,
+        1477.46
+      ],
+      "seed_xyz_mm": [
+        -6.61,
+        6.6,
+        1473.9
+      ],
+      "radius_mm": 2.24,
+      "direction_xyz": [
+        -0.5685,
+        -0.2287,
+        -0.7903
+      ]
+    },
+    {
+      "instance_id": "branch_003",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        12.3,
+        10.91,
+        1465.46
+      ],
+      "seed_xyz_mm": [
+        16.36,
+        11.23,
+        1464.0
+      ],
+      "radius_mm": 2.08,
+      "direction_xyz": [
+        0.9386,
+        0.1686,
+        -0.3011
+      ]
+    }
+  ]
+}

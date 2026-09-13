@@ -12,13 +12,119 @@ import aorta as ao
 import branches as br
 from bsio import Volume, load_case
 
-# Filters. The challenge fixes the 5 mm rule and leaves the minimum origin size
-# to the final dataset, so the size floors below are conservative defaults.
-MIN_REACH_MM = 5.0
-MIN_SEED_RADIUS_MM = 0.65
-MIN_OSTIUM_RADIUS_MM = 0.85
-CAP_ALIGNMENT = 0.62
-CAP_END_MM = 6.0
+# Filters, gathered in one place so they can be stated, argued with and swept
+# rather than scattered through the code as literals.
+#
+# The 5 mm rule is the brief's. The size floors follow the annotation policy on
+# the reference set, which requires an estimated 2 mm lumen at the opening, so
+# a 1.0 mm radius. The proportion limits describe a shape: an opening wildly
+# out of scale with the lumen behind it, in either direction. Too large and the
+# "branch" is a sheet of tissue lying against the wall. Too small and the growth
+# has squeezed through a gap and flooded what is behind it, because an artery
+# does not start as a pinhole and become several times wider five millimetres
+# later.
+DEFAULTS = dict(
+    min_reach_mm=5.0,
+    min_seed_radius_mm=1.00,
+    min_ostium_radius_mm=1.00,
+    max_footprint_ratio=4.2,
+    min_footprint_ratio=0.60,
+    min_straight_mm=2.6,
+    min_clearance_mm=1.0,
+    cap_alignment=0.62,
+    cap_end_mm=6.0,
+    # the terminal division is a pair of large vessels at the very bottom of the
+    # segment; on a short segment a fixed 22 mm window covers most of the aorta,
+    # so it is capped at a quarter of what was supplied
+    terminal_end_mm=22.0,
+    terminal_end_fraction=0.25,
+    terminal_ostium_fraction=0.45,
+    terminal_radius_fraction=0.42,
+    terminal_alignment=0.45,
+    # low-contrast studies
+    lc_min_reach_mm=8.0,
+    lc_min_radius_mm=1.20,
+)
+
+MIN_REACH_MM = DEFAULTS["min_reach_mm"]
+MIN_SEED_RADIUS_MM = DEFAULTS["min_seed_radius_mm"]
+MIN_OSTIUM_RADIUS_MM = DEFAULTS["min_ostium_radius_mm"]
+CAP_ALIGNMENT = DEFAULTS["cap_alignment"]
+CAP_END_MM = DEFAULTS["cap_end_mm"]
+MAX_FOOTPRINT_RATIO = DEFAULTS["max_footprint_ratio"]
+MIN_FOOTPRINT_RATIO = DEFAULTS["min_footprint_ratio"]
+
+
+def classify(found, stats, aorta_length_mm, params=None):
+    """Sort raw candidates into daughters, the terminal division, and refusals.
+
+    Separated from ``process_case`` so a change to any threshold can be scored
+    against a reference set without re-running the image processing.
+    """
+    p = dict(DEFAULTS)
+    if params:
+        p.update(params)
+
+    calcium_ceiling = stats.get("lumen_p98", stats["lumen_median"]) + 110.0
+
+    # On a scan where the aorta itself is not opacified there is no brightness
+    # difference left to separate a daughter lumen from the muscle and fat
+    # around it, so nothing below is trustworthy. Rather than emit a long list
+    # of texture, the bar is raised to something only a genuinely bright,
+    # genuinely tubular structure could clear, and the case is flagged.
+    low_contrast = not stats.get("contrast_ok", True)
+    min_reach = p["lc_min_reach_mm"] if low_contrast else p["min_reach_mm"]
+    min_radius = p["lc_min_radius_mm"] if low_contrast else p["min_seed_radius_mm"]
+    bright_floor = (stats.get("lumen_p75", stats["lumen_median"])
+                    if low_contrast else None)
+    terminal_window = min(p["terminal_end_mm"],
+                          p["terminal_end_fraction"] * max(aorta_length_mm, 1.0))
+
+    daughters, rejected, extras = [], [], []
+    for cand in found:
+        reason = None
+        if cand["reach_mm"] < min_reach:
+            reason = ("shorter than 5 mm beyond the wall" if not low_contrast
+                      else "too short to trust on an unopacified scan")
+        elif bright_floor is not None and cand["path_hu_median"] < bright_floor:
+            reason = "no brighter than the unopacified parent lumen"
+        elif (cand["straight_mm"] < p["min_straight_mm"]
+              or cand["seed_wall_clearance_mm"] < p["min_clearance_mm"]):
+            reason = "creeps along the wall instead of leaving it"
+        elif cand["radius_mm"] < min_radius:
+            reason = "lumen too small at the seed"
+        elif cand["ostium_radius_mm"] < p["min_ostium_radius_mm"]:
+            reason = "origin below the minimum size"
+        elif cand["footprint_ratio"] > p["max_footprint_ratio"]:
+            reason = "wall-hugging sheet, not an opening"
+        elif cand["footprint_ratio"] < p["min_footprint_ratio"]:
+            reason = "lumen far wider than the opening feeding it, reads as a leak"
+        elif cand["path_hu_median"] > calcium_ceiling:
+            reason = "too bright for contrast, reads as calcium or bone"
+        elif (cand["axial_alignment"] > p["cap_alignment"]
+              and cand["distance_to_end_mm"] < p["cap_end_mm"]):
+            reason = "flat cropped end of the supplied segment"
+
+        parent = max(cand["parent_radius_mm"], 1e-6)
+        is_terminal = (
+            reason is None
+            and cand["ostium_radius_mm"] > p["terminal_ostium_fraction"] * parent
+            and cand["radius_mm"] > p["terminal_radius_fraction"] * parent
+            and cand["distance_to_end_mm"] < terminal_window
+            and cand["axial_alignment"] > p["terminal_alignment"]
+        )
+
+        cand["reject_reason"] = reason
+        if reason is not None:
+            rejected.append(cand)
+        elif is_terminal:
+            extras.append(cand)
+        else:
+            daughters.append(cand)
+
+    daughters.sort(key=lambda c: c["arc_mm"])
+    extras.sort(key=lambda c: c["arc_mm"])
+    return daughters, extras, rejected
 
 
 def _ramp(value, low, high):
@@ -59,7 +165,7 @@ def _anatomical_axes(affine: np.ndarray, spacing: np.ndarray):
 
 
 def process_case(image_path: str, mask_path: str, case_id: str,
-                 want_maps: bool = True):
+                 want_maps: bool = True, filters=None):
     t0 = time.time()
     vol, aorta_full = load_case(image_path, mask_path)
     aorta_full = ao.clean_mask(aorta_full)
@@ -85,65 +191,12 @@ def process_case(image_path: str, mask_path: str, case_id: str,
 
     found, stats = br.detect(ct, aorta, spacing, points_mm, arc_mm, tangents, u, v)
 
-    calcium_ceiling = stats.get("lumen_p98", stats["lumen_median"]) + 110.0
-
-    # On a scan where the aorta itself is not opacified there is no brightness
-    # difference left to separate a daughter lumen from the muscle and fat
-    # around it, so nothing below is trustworthy. Rather than emit a long list
-    # of texture, the bar is raised to something only a genuinely bright,
-    # genuinely tubular structure could clear, and the case is flagged.
-    low_contrast = not stats.get("contrast_ok", True)
-    min_reach = 8.0 if low_contrast else MIN_REACH_MM
-    min_radius = 1.20 if low_contrast else MIN_SEED_RADIUS_MM
-    bright_floor = stats.get("lumen_p75", stats["lumen_median"]) if low_contrast else None
-
-    daughters, rejected, extras = [], [], []
-    for cand in found:
-        reason = None
-        if cand["reach_mm"] < min_reach:
-            reason = ("shorter than 5 mm beyond the wall" if not low_contrast
-                      else "too short to trust on an unopacified scan")
-        elif bright_floor is not None and cand["path_hu_median"] < bright_floor:
-            reason = "no brighter than the unopacified parent lumen"
-        elif cand["straight_mm"] < 2.6 or cand["seed_wall_clearance_mm"] < 1.0:
-            reason = "creeps along the wall instead of leaving it"
-        elif cand["radius_mm"] < min_radius:
-            reason = "lumen too small at the seed"
-        elif cand["ostium_radius_mm"] < MIN_OSTIUM_RADIUS_MM:
-            reason = "origin below the minimum size"
-        elif cand["footprint_ratio"] > 4.2:
-            reason = "wall-hugging sheet, not an opening"
-        elif cand["path_hu_median"] > calcium_ceiling:
-            reason = "too bright for contrast, reads as calcium or bone"
-        elif (cand["axial_alignment"] > CAP_ALIGNMENT
-              and cand["distance_to_end_mm"] < CAP_END_MM):
-            reason = "flat cropped end of the supplied segment"
-
-        is_terminal = (
-            reason is None
-            and cand["ostium_radius_mm"] > 0.50 * max(cand["parent_radius_mm"], 1e-6)
-            and cand["radius_mm"] > 0.42 * max(cand["parent_radius_mm"], 1e-6)
-            and cand["distance_to_end_mm"] < 22.0
-            and cand["axial_alignment"] > 0.45
-        )
-
-        if reason is not None:
-            cand["reject_reason"] = reason
-            rejected.append(cand)
-        elif is_terminal:
-            extras.append(cand)
-        else:
-            daughters.append(cand)
-
-    # order by position along the aorta, superior first
-    daughters.sort(key=lambda c: c["arc_mm"])
-    extras.sort(key=lambda c: c["arc_mm"])
+    aorta_length_mm = float(arc_mm[-1] - arc_mm[0])
+    daughters, extras, rejected = classify(found, stats, aorta_length_mm,
+                                           params=filters)
 
     for c in daughters + extras:
         c["confidence"] = _confidence(c, stats)
-        # a radius smaller than one voxel dimension cannot be measured
-        # reliably -- flag it rather than pretend precision
-        c["radius_low_confidence"] = bool(c["radius_mm"] < float(np.min(spacing)))
 
     unwrap = None
     if want_maps:
@@ -188,6 +241,8 @@ def process_case(image_path: str, mask_path: str, case_id: str,
         daughters=daughters,
         extras=extras,
         rejected=rejected,
+        candidates=found,
+        aorta_length_mm=aorta_length_mm,
         unwrap=unwrap,
         stats=stats,
         seconds=elapsed,
@@ -202,6 +257,18 @@ def to_prediction(record) -> dict:
         "parent": {"instance_id": "aorta"},
         "daughters": [],
     }
+    # Say so in the file itself when the study is not an angiogram. The method
+    # rests on a daughter lumen being brighter than the tissue around it, which
+    # is only true when the parent is opacified, so on these scans the output is
+    # a best effort under a much higher bar rather than a normal result.
+    stats = record.get("stats") or {}
+    if not stats.get("contrast_ok", True):
+        out["quality"] = {
+            "contrast": "not_an_angiogram",
+            "lumen_p25_hu": round(float(stats.get("opacification_hu", 0.0)), 1),
+            "note": ("parent lumen below the 150 HU opacification floor; "
+                     "acceptance raised and these daughters are low confidence"),
+        }
     for i, c in enumerate(record["daughters"], start=1):
         out["daughters"].append({
             "instance_id": f"branch_{i:03d}",

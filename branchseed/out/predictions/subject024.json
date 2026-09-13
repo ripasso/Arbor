@@ -1,0 +1,133 @@
+{
+  "case_id": "subject024",
+  "parent": {
+    "instance_id": "aorta"
+  },
+  "daughters": [
+    {
+      "instance_id": "branch_001",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        16.9,
+        -144.45,
+        1896.7
+      ],
+      "seed_xyz_mm": [
+        13.11,
+        -145.6,
+        1898.07
+      ],
+      "radius_mm": 1.51,
+      "direction_xyz": [
+        -0.8209,
+        -0.0503,
+        0.5689
+      ]
+    },
+    {
+      "instance_id": "branch_002",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        -5.37,
+        -133.77,
+        1852.66
+      ],
+      "seed_xyz_mm": [
+        -7.39,
+        -131.39,
+        1854.86
+      ],
+      "radius_mm": 2.26,
+      "direction_xyz": [
+        -0.8917,
+        0.26,
+        0.3705
+      ]
+    },
+    {
+      "instance_id": "branch_003",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        6.09,
+        -158.62,
+        1840.18
+      ],
+      "seed_xyz_mm": [
+        6.67,
+        -161.86,
+        1840.84
+      ],
+      "radius_mm": 1.51,
+      "direction_xyz": [
+        0.0243,
+        -0.9819,
+        0.1876
+      ]
+    },
+    {
+      "instance_id": "branch_004",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        13.77,
+        -170.16,
+        1796.31
+      ],
+      "seed_xyz_mm": [
+        15.0,
+        -173.94,
+        1794.21
+      ],
+      "radius_mm": 1.97,
+      "direction_xyz": [
+        0.3731,
+        -0.9277,
+        -0.0147
+      ]
+    },
+    {
+      "instance_id": "branch_005",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        10.89,
+        -173.34,
+        1794.95
+      ],
+      "seed_xyz_mm": [
+        8.94,
+        -177.32,
+        1794.73
+      ],
+      "radius_mm": 2.03,
+      "direction_xyz": [
+        -0.403,
+        -0.915,
+        -0.0206
+      ]
+    },
+    {
+      "instance_id": "branch_006",
+      "parent_instance_id": "aorta",
+      "ostium_xyz_mm": [
+        15.76,
+        -164.02,
+        1782.69
+      ],
+      "seed_xyz_mm": [
+        19.88,
+        -166.25,
+        1782.5
+      ],
+      "radius_mm": 1.5,
+      "direction_xyz": [
+        0.8363,
+        -0.547,
+        -0.0373
+      ]
+    }
+  ],
+  "quality": {
+    "contrast": "not_an_angiogram",
+    "lumen_p25_hu": 18.0,
+    "note": "parent lumen below the 150 HU opacification floor; acceptance raised and these daughters are low confidence"
+  }
+}

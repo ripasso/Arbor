@@ -50,6 +50,10 @@ python run_all.py            # writes out/predictions/*.json and out/assets/*
 }
 ```
 
+A case whose parent lumen is not opacified also carries a `quality` block saying
+so, since on such a study nothing below the wall can be separated from muscle by
+brightness and the output is a best effort under a much higher bar.
+
 Coordinates are in the physical frame `SimpleITK.TransformIndexToPhysicalPoint`
 returns, not voxel indices. `direction_xyz` is a unit vector pointing from the
 opening into the daughter. Each real daughter appears once. A case with no
@@ -94,12 +98,27 @@ branches can never fuse into a single blob, and a leak into neighbouring tissue
 stays attached to the origin it came from instead of swallowing the abdomen.
 That containment is what makes a permissive threshold safe to use.
 
+**3b — Settle the count away from the wall, not at it.** One footprint, one
+ostium only holds if the footprints are separate at the threshold the scan
+forced on us, and a permissive threshold runs two neighbouring contact patches
+together. The count then collapses silently: one patch, one ostium, and the
+second artery is gone. So each label is probed outward, the distance is taken at
+which it separates into the most arms that are each large enough to be an artery
+and each persist at least 3 mm further out, and those arms are propagated back
+inward to the wall so every one owns its own piece of the footprint. It is the
+mirror of the growth in step 3. This was the single largest source of missed
+branches and it is invisible without a reference, because the output looks
+perfectly reasonable either way.
+
 **4 — Walk the first ten millimetres.** Each branch is followed outward shell by
 shell to the first bifurcation or 10 mm, whichever comes first. The seed is the
-point 5 mm along that path. The direction is a line fit over the first 6 mm. The
-radius is measured on a half-maximum contour in the plane across the vessel at
-the seed, which keeps it sub-voxel on 1.5 mm scans instead of stepping in
-half-voxel jumps.
+point 5 mm along that path. The direction is a line fit over three times the
+vessel's own radius. The radius is measured on a half-maximum contour in the
+plane across the vessel at the seed, which keeps it sub-voxel on 1.5 mm scans
+instead of stepping in half-voxel jumps. A shell is about one voxel thick, so a
+vessel running obliquely can miss one entirely; two or three empty shells are
+tolerated before the trace is called finished, because treating the first gap as
+the end of the vessel was deleting whole branches before they reached a filter.
 
 **Taken from prior work.** The pipeline was written from first principles and
 then checked against the literature on the same task, which corrected two
@@ -153,6 +172,10 @@ it outside the core task.
 | `bsio.py` | NIfTI reading and the voxel-to-physical-millimetre conversion |
 | `export.py` | the figures and the atlas data the visualisation is built from |
 | `run_all.py` | batch driver over a folder of `subjectNNN/` cases |
+| `score.py` | scores a filter setting against a reference set, with a sweep |
+| `diag.py` | per reference daughter: matched, or which filter refused it |
+| `whymiss.py` | for a miss with no nearby candidate, which stage lost it |
+| `publish.py` | assembles `site/` from `out/`, and names anything missing |
 | `site/` | the interactive visualisation, generated entirely from the outputs |
 
 ## Visual checks
@@ -163,29 +186,25 @@ mask overlaid. The page in `site/` puts them together: pick an origin on the
 flattened map and the slice viewer jumps to the level it was found on, with the
 direction vector drawn as it projects into that slice.
 
+## Accuracy
+
+A draft reference exists for five of the twenty-five cases, 19 daughter
+instances in all. Against it: F1 0.491, recall 0.684, precision 0.382, median
+ostium error 1.47 mm against an inter-observer agreement of 2.5 mm. Its authors
+describe it as expert-review-pending and state that it is not exhaustive, so
+**recall against it is meaningful and precision is pessimistic by an unknown
+amount**. `EVALUATION.md` has the full account, including the three defects it
+exposed, which thresholds moved and why, and two improvements that were measured
+and then deliberately not taken.
+
+```
+python score.py       # sweep every threshold against the reference, one at a time
+python diag.py        # per reference daughter: matched, or which filter refused it
+```
+
 ## Runtime
 
-Single-threaded, CPU only, peak memory under 2 GB. Cost scales with the length
-of aorta supplied rather than with file size. Per-case timings for the whole
-development set are in the table at the bottom of the visualisation.
-
-## Known limitations
-
-- **Radius below one voxel is unreliable.** The half-max contour radius is
-  accurate down to roughly the voxel size; below that, partial-volume blur
-  dominates and the estimate can be off by a factor of two either way
-  (measured on synthetic tubes at 1.5 mm spacing). Daughters whose reported
-  radius is smaller than the scan's finest voxel dimension carry
-  `radius_low_confidence: true` in the atlas data rather than being silently
-  trusted.
-- **The 2.6 mm footprint-merge radius is anatomical, not resolution-driven.**
-  It deduplicates patches belonging to the same opening split by a dim voxel;
-  real ostia in the dev set are never closer than ~4 mm, so a fixed physical
-  distance is the correct unit -- scaling it by voxel spacing would wrongly
-  merge distinct origins on coarse scans.
-- **Internal geometry assumes near-axis-aligned acquisitions.** Intermediate
-  distances and frames are computed in scaled-voxel space; final reported
-  coordinates always go through the full affine (verified 0.0 mm error vs
-  SimpleITK `TransformIndexToPhysicalPoint` on every dev case). One dev case
-  (subject024) has a ~3.5 degree rotated matrix, adding up to ~5% error to
-  internal distances on that case only.
+Single-threaded, CPU only, peak memory under 2 GB. Median 13 s per case, slowest
+26 s, well inside the 60 s budget. Cost scales with the length of aorta supplied
+rather than with file size. Per-case timings for the whole development set are in
+the table at the bottom of the visualisation.
