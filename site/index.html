@@ -357,23 +357,6 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);color:v
   </div>
 </section>
 
-<section id="method">
-  <div class="shead"><h2>How the method was built</h2><span class="lbl">first principles, checked against prior work</span></div>
-  <p class="lede">The pipeline was built from first principles and then checked against prior work on the same problem, which turned up two things it had wrong and one that did not survive contact with this data.</p>
-  <div class="grid2">
-    <figure>
-      <svg id="centrechart" class="chartsvg" role="img" aria-label="Share of footprint centroids that fall outside their own contact patch"></svg>
-      <figcaption class="note">Measured over 467 contact patches across a dozen cases.</figcaption>
-    </figure>
-    <div class="notes" style="margin-top:0">
-      <div class="note"><h3>The opening's centre is not its centroid</h3><p>Tahoces takes the contact point as the voxel furthest from the edge of the contact area. An opening cut obliquely through the wall is often crescent shaped, and the centroid of a crescent sits on its rim or off it entirely: it did so on 26.8% of patches here, usually landing inside the aortic lumen. The rim-distance maximum is inside the patch every time, and moves the reported point by a median of 1.5 mm.</p></div>
-      <div class="note"><h3>The direction window should scale</h3><p>Riffaud fits the direction a branch leaves at over three times its own radius. A lumbar artery a millimetre across and a renal four times that were sharing a flat 6 mm window here. The radius is now measured on a provisional fit and the direction fitted again at the right scale.</p></div>
-      <div class="note"><h3>One that did not work</h3><p>Danilov cleans vessel masks by walking distance layers inward from the farthest one, dropping voxels with no neighbour further out. Ported directly it anchors on each label's farthest point, which on this data is frequently a leak rather than the vessel, so it kept the leak and deleted the branch. It cost subject 2 both its coeliac and mesenteric arteries before being reverted.</p></div>
-      <div class="note"><h3>Stopping</h3><p>The walk halts at the first bifurcation. A vessel arising from another daughter is not a direct aortic daughter, so the trace has no business following it.</p></div>
-    </div>
-  </div>
-</section>
-
 <section id="compute">
   <div class="shead"><h2>Compute efficiency</h2><span class="lbl">runtime and peak memory</span></div>
   <p class="lede">The brief allows sixty seconds a case on four cores and eight gigabytes, with no GPU and no network. This runs single-threaded on one core, so there are three cores of headroom left unused.</p>
@@ -1052,30 +1035,6 @@ maskbtn.addEventListener("click", () => { showMask = !showMask; maskbtn.setAttri
     + `total ${(cases.reduce((s,c)=>s+c.seconds,0)/60).toFixed(1)} minutes for all twenty-five. `
     + (peaks.length ? `Peak resident memory ${Math.max(...peaks).toFixed(1)} GB against an eight gigabyte allowance. ` : "")
     + `Single-threaded, so three of the four allowed cores sit idle and there is obvious headroom if the budget ever binds.`;
-})();
-
-/* ---------------- centroid vs rim-max ---------------- */
-(function(){
-  const svg = document.getElementById("centrechart");
-  if (!svg) return;
-  const W = 400, H = 168, L = 112, R = 40, T = 26;
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const rows = [["Patch centroid", 26.8, tok("--origin")],
-                ["Rim-distance maximum", 0.0, tok("--zone")]];
-  const x = v => L + (v/30)*(W-L-R);
-  for (let v = 0; v <= 30; v += 10){
-    svg.appendChild(el("line",{x1:x(v),y1:T-8,x2:x(v),y2:T+72,stroke:tok("--rule"),"stroke-width":1}));
-    svg.appendChild(txt(x(v), T-12, v + "%", {"text-anchor":"middle","font-size":10}));
-  }
-  rows.forEach(([label,v,colour],i) => {
-    const yy = T + 6 + i*34;
-    svg.appendChild(txt(L-8, yy+13, label, {"text-anchor":"end","font-size":11.5,fill:tok("--ink-2")}));
-    svg.appendChild(el("rect",{x:L,y:yy+3,width:Math.max(x(v)-L,1.5),height:16,fill:colour}));
-    svg.appendChild(txt(Math.max(x(v),L)+7, yy+16, v.toFixed(1) + "%",
-      {"font-size":11,fill:tok("--ink-2"),"font-weight":600}));
-  });
-  svg.appendChild(txt(0, H-8, "share of reported openings that fall outside the patch they describe",
-    {"font-size":10}));
 })();
 
 /* ---------------- schema block ---------------- */
