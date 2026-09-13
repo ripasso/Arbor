@@ -34,14 +34,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_pipeline(image_path: str, mask_path: str, case_id: str) -> dict:
+def run_pipeline(image_path: str, mask_path: str, case_id: str, label_map_path: str | None = None) -> dict:
     """
     Full Stage A -> H pipeline for one case. Returns the prediction dict
-    (matches output.build_json's schema).
-
-    NOTE: this is the integration point -- fill in once each stage's
-    module is implemented. Left unimplemented deliberately so each
-    person's module can be unit-tested independently first.
+    (matches output.build_json's schema) and writes label map if path is provided.
     """
     case = io_utils.load_case(image_path, mask_path, case_id)
     image, mask = case.image, case.mask
@@ -78,25 +74,46 @@ def run_pipeline(image_path: str, mask_path: str, case_id: str) -> dict:
             )
         )
     ostia = ostium.deduplicate_ostia(ostia)
+    ostia = ostium.merge_nearby_ostia(ostia, roi_image, merge_dist_mm=4.0)
+
+    # Diagnostic prints to track components, wall zones, and deduplication
+    print("raw components:", len(comps))
+    print("touching aorta:", len(touching))
+    for c in touching:
+        contact = ostium.find_contact_voxels(c, roi_mask)
+        zones = ostium._contact_zones(contact)
+        print(f"  component {c.label}: {len(contact)} contact voxels, {len(zones)} wall zones")
+    print("ostia after dedup:", len(ostia))
 
     # Stage F/G: centerline -> eligibility -> proximal segment -> measurements
     daughters = []
     for cand in ostia:
+        if cand.component.voxel_indices.size == 0:
+            continue
+            
         centerline = tracing.extract_centerline(cand.component, roi_mask)
+        if centerline is None or len(centerline) < 2:
+            continue
+            
+        # MANDATORY SPEC GUARD: Enforce that the branch tracks outward ≥ 5.0mm from the wall
         if not tracing.check_eligibility(
             centerline, spacing, config.ELIGIBILITY_MIN_TRACE_MM
         ):
             continue
+            
         bif = tracing.find_first_bifurcation(cand.component, centerline)
         segment = tracing.trim_to_proximal_segment(
             centerline, spacing, config.PROXIMAL_MAX_TRACE_MM, bif
         )
+        
+        if segment is None or len(segment) == 0:
+            continue
 
-        # Measure the path starting from the ostium itself (prepend it).
         path_idx = np.vstack(
             [np.asarray(cand.centroid_index, dtype=float), segment.astype(float)]
         )
         path_mm = np.array([io_utils.voxel_to_mm(roi_image, p) for p in path_idx])
+        
         try:
             ostium_mm = io_utils.voxel_to_mm(roi_image, cand.centroid_index)
             seed_mm = measurements.get_seed_point(
@@ -105,7 +122,7 @@ def run_pipeline(image_path: str, mask_path: str, case_id: str) -> dict:
             direction = measurements.get_direction(path_mm)
             seed_idx = roi_image.TransformPhysicalPointToIndex(seed_mm)
             radius = measurements.get_radius_mm(cand.component, seed_idx, spacing)
-        except ValueError:
+        except (ValueError, IndexError):
             continue
 
         daughters.append(
@@ -119,18 +136,24 @@ def run_pipeline(image_path: str, mask_path: str, case_id: str) -> dict:
             )
         )
 
-    # Stable branch IDs: sort by physical position, then number.
-    daughters.sort(key=lambda d: d.ostium_xyz_mm)
+    # Sort cleanly by vertical anatomical depth along the Z axis
+    daughters.sort(key=lambda d: d.ostium_xyz_mm[2])
     for i, d in enumerate(daughters, start=1):
         d.instance_id = f"branch_{i:03d}"
 
-    return output_module.build_json(case_id, daughters)
+    prediction = output_module.build_json(case_id, daughters)
+
+    if label_map_path:
+        output_module.write_label_map(image, mask, daughters, label_map_path)
+
+    return prediction
 
 
 def main() -> None:
     args = parse_args()
     case_id = args.case_id or args.image.split("/")[-1].split(".")[0]
-    prediction = run_pipeline(args.image, args.aorta_mask, case_id)
+    label_path = args.output[:-5] + "_labels.nii.gz" if args.output.endswith(".json") else args.output + "_labels.nii.gz"
+    prediction = run_pipeline(args.image, args.aorta_mask, case_id, label_map_path=label_path)
     output_module.write_json(prediction, args.output)
 
 
