@@ -8,80 +8,80 @@
       "instance_id": "branch_001",
       "parent_instance_id": "aorta",
       "ostium_xyz_mm": [
-        8.73,
-        9.73,
-        1524.6
+        8.99,
+        8.66,
+        1523.85
       ],
       "seed_xyz_mm": [
-        8.99,
-        7.94,
-        1520.09
+        9.1,
+        7.46,
+        1519.33
       ],
-      "radius_mm": 2.15,
+      "radius_mm": 2.33,
       "direction_xyz": [
-        0.0623,
-        -0.3387,
-        -0.9388
+        0.0625,
+        -0.3013,
+        -0.9515
       ]
     },
     {
       "instance_id": "branch_002",
       "parent_instance_id": "aorta",
       "ostium_xyz_mm": [
-        5.27,
-        6.72,
-        1508.77
+        5.75,
+        6.07,
+        1508.65
       ],
       "seed_xyz_mm": [
-        4.76,
-        3.81,
-        1504.99
+        4.75,
+        3.73,
+        1504.88
       ],
-      "radius_mm": 3.39,
+      "radius_mm": 3.4,
       "direction_xyz": [
-        -0.0794,
-        -0.5811,
-        -0.81
+        -0.093,
+        -0.5712,
+        -0.8155
       ]
     },
     {
       "instance_id": "branch_003",
       "parent_instance_id": "aorta",
       "ostium_xyz_mm": [
-        -6.35,
-        7.85,
-        1494.05
+        -5.9,
+        7.36,
+        1494.25
       ],
       "seed_xyz_mm": [
-        -9.0,
+        -8.9,
         6.47,
-        1490.42
+        1490.54
       ],
-      "radius_mm": 2.24,
+      "radius_mm": 2.23,
       "direction_xyz": [
-        -0.6074,
-        -0.2432,
-        -0.7563
+        -0.6369,
+        -0.1804,
+        -0.7496
       ]
     },
     {
       "instance_id": "branch_004",
       "parent_instance_id": "aorta",
       "ostium_xyz_mm": [
-        5.84,
-        12.27,
-        1490.48
+        7.69,
+        9.3,
+        1487.85
       ],
       "seed_xyz_mm": [
-        8.62,
-        9.57,
+        10.77,
+        10.58,
         1487.51
       ],
-      "radius_mm": 3.39,
+      "radius_mm": 2.21,
       "direction_xyz": [
-        0.6696,
-        -0.4864,
-        -0.5613
+        0.9215,
+        0.3873,
+        0.0272
       ]
     }
   ]

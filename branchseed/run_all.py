@@ -22,7 +22,9 @@ for s in subs:
     try:
         o = glob.glob(d+"/orig*.nii")[0]; m = glob.glob(d+"/mask*.nii")[0]
         t0=time.time()
+        rss0 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e6
         r = process_case(o, m, s)
+        r["peak_rss_gb"] = round(max(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e6, rss0), 2)
         with open(os.path.join(PRED, f"{s}.json"), "w") as fh:
             json.dump(to_prediction(r), fh, indent=2)
         e = export_case(r, ASSETS)

@@ -47,11 +47,30 @@ def contrast_window(ct: np.ndarray, aorta: np.ndarray, spacing: np.ndarray):
     surround = ct[near & ~aorta]
     bg = float(np.median(surround)) if surround.size else 0.0
 
+    p25 = float(np.percentile(lumen, 25))
+    p75 = float(np.percentile(lumen, 75))
+    bg90 = float(np.percentile(surround, 90)) if surround.size else bg
+
     high = max(p95 * 1.35 + 150.0, 700.0)
     floor = max(bg + 50.0, 80.0)
     low = _wall_flood_threshold(ct, aorta, spacing, med, high, floor)
+
+    # Is this actually an angiogram? The whole method rests on a daughter lumen
+    # being brighter than the tissue it runs through, which is only true when
+    # the parent is opacified. The test is the lower quartile of the aortic
+    # lumen against an absolute floor: iodinated arterial blood sits far above
+    # 150 HU, unopacified blood sits near 40. Across the development set this
+    # reads 194 HU or higher on twenty-three cases and 50 and 18 on the two
+    # that are not contrast studies at all, so the two groups do not overlap.
+    # Comparing against the local background instead fails here, because the
+    # vertebral body and other opacified vessels sit in that background and
+    # drag it up on perfectly good scans.
     return dict(hu_low=float(low), hu_high=float(high), lumen_median=med,
-                lumen_p98=p98, background=bg)
+                lumen_p25=p25, lumen_p75=p75, lumen_p98=p98,
+                background=bg, background_p90=bg90,
+                opacification_hu=float(p25),
+                contrast_margin=float(p25 - bg90),
+                contrast_ok=bool(p25 >= 150.0))
 
 
 def _wall_flood_threshold(ct, aorta, spacing, lumen_med, hu_high, floor,
@@ -142,11 +161,75 @@ def outward_growth(ct, aorta, spacing, window, reach_mm=20.0,
 # proximal tracing
 # --------------------------------------------------------------------------- #
 
-def trace_outward(component, outside, spacing, start_mask, max_path_mm=10.0):
+def opening_centre(patch, band, spacing):
+    """The point furthest from the rim of a wall footprint, not its centroid.
+
+    Tahoces et al. (Med Biol Eng Comput 2020) take the contact point as the
+    voxel that maximises distance to the edge of the contact area. That matters
+    because an opening cut obliquely through the wall is often crescent shaped,
+    and the centroid of a crescent can sit on its rim or outside it altogether,
+    which puts the reported ostium off the lumen.
+
+    The distance has to be measured *along the wall*. The contact patch is a
+    shell barely one voxel thick, so an ordinary distance transform of it is
+    half a voxel everywhere and its maximum is wherever ties happen to break.
+    Distance to the nearest wall voxel that is not part of the patch gives the
+    intended quantity.
+    """
+    sl = ndi.find_objects(patch.astype(np.uint8))[0]
+    pad = tuple(slice(max(s.start - 3, 0), min(s.stop + 3, patch.shape[i]))
+                for i, s in enumerate(sl))
+    local = patch[pad]
+    rim = band[pad] & ~local
+    if not rim.any():
+        idx = np.array(np.nonzero(local), dtype=float).mean(axis=1)
+    else:
+        depth = ndi.distance_transform_edt(~rim, sampling=spacing)
+        depth = np.where(local, depth, -1.0)
+        idx = np.array(np.unravel_index(int(np.argmax(depth)), local.shape), dtype=float)
+    idx += np.array([s.start for s in pad], dtype=float)
+    return idx * spacing
+
+
+def peel_dead_ends(labels, outside, spacing, present):
+    """Drop the parts of a label that lead nowhere.
+
+    Danilov et al. (Computation 2016) clean vessel masks near the aortic border
+    by walking distance layers inward and deleting any voxel with no neighbour
+    one layer further out. Applied per label, with each label's own farthest
+    layer as the starting point, this trims the blobs that cling to the wall
+    beside a real branch without shortening the branch itself. The point is not
+    the count, which the reach test already handles, but the region the radius
+    and direction are then measured from.
+    """
+    step = float(max(0.5, np.min(spacing) * 0.9))
+    cleaned = labels.copy()
+    for k in present:
+        blob = labels == k
+        if not blob.any():
+            continue
+        far = float(outside[blob].max())
+        keep = blob & (outside >= far - step)
+        if not keep.any():
+            continue
+        d = far - step
+        while d > 0:
+            layer = blob & (outside >= d - step) & (outside < d)
+            if layer.any():
+                attached = layer & ndi.binary_dilation(keep, CONN26)
+                keep |= attached
+            d -= step
+        # anything touching the wall is kept, otherwise the branch loses its root
+        keep |= blob & (outside <= step * 1.2)
+        cleaned[blob & ~keep] = 0
+    return cleaned
+
+
+def trace_outward(component, outside, spacing, start_mask, start_point_mm,
+                  max_path_mm=10.0):
     """Follow one branch outward, shell by shell, accumulating path length."""
     step = float(max(0.5, np.min(spacing) * 0.9))
-    idx = np.array(np.nonzero(start_mask), dtype=float)
-    here = idx.mean(axis=1) * spacing
+    here = np.asarray(start_point_mm, dtype=float)
     r0 = float(outside[start_mask].mean())
 
     path = [(0.0, here)]
@@ -240,7 +323,8 @@ def detect(ct, aorta, spacing, points_mm, arc_mm, tangents, u, v, merge_mm=2.6):
 
     vessel = (labels > 0) | aorta
     aorta_edt = ndi.distance_transform_edt(aorta, sampling=spacing)
-    contact = (labels > 0) & ndi.binary_dilation(aorta, CONN18)
+    band = ndi.binary_dilation(aorta, CONN18) & ~aorta
+    contact = (labels > 0) & band
 
     # merge footprints that sit almost on top of each other
     centroids = {}
@@ -265,13 +349,14 @@ def detect(ct, aorta, spacing, points_mm, arc_mm, tangents, u, v, merge_mm=2.6):
         if not patch.any():
             continue
 
-        path, bifurcation, radial_reach = trace_outward(component, outside, spacing, patch)
+        ostium_mm = opening_centre(patch, band, spacing)
+        path, bifurcation, radial_reach = trace_outward(component, outside, spacing,
+                                                        patch, ostium_mm)
         if len(path) < 2:
             continue
 
         dists = np.array([d for d, _ in path])
         pts = np.array([p for _, p in path])
-        ostium_mm = pts[0]
 
         ostium_idx = np.array(np.nonzero(patch), dtype=float)
         area_mm2 = float(ostium_idx.shape[1] * np.sort(spacing)[0] * np.sort(spacing)[1])
@@ -280,23 +365,36 @@ def detect(ct, aorta, spacing, points_mm, arc_mm, tangents, u, v, merge_mm=2.6):
         seed_target = min(5.0, float(dists[-1]))
         seed_mm = np.array([np.interp(seed_target, dists, pts[:, k]) for k in range(3)])
 
-        near = pts[dists <= 6.5] if (dists <= 6.5).any() else pts[:2]
-        centred = near - near.mean(axis=0)
-        if len(near) >= 3:
-            _, _, vt = np.linalg.svd(centred, full_matrices=False)
-            direction = vt[0]
-        else:
-            direction = near[-1] - near[0]
-        if np.dot(direction, seed_mm - ostium_mm) < 0:
-            direction = -direction
-        norm = np.linalg.norm(direction)
-        direction = direction / norm if norm > 1e-9 else np.array([0.0, 0.0, 1.0])
+        def fit_direction(window_mm):
+            near = pts[dists <= window_mm] if (dists <= window_mm).any() else pts[:2]
+            centred = near - near.mean(axis=0)
+            if len(near) >= 3:
+                _, _, vt = np.linalg.svd(centred, full_matrices=False)
+                d = vt[0]
+            else:
+                d = near[-1] - near[0]
+            if np.dot(d, seed_mm - ostium_mm) < 0:
+                d = -d
+            n = np.linalg.norm(d)
+            return d / n if n > 1e-9 else np.array([0.0, 0.0, 1.0])
 
+        # Riffaud et al. (Med Biol Eng Comput 2022) fit the direction a branch
+        # leaves at over three times its own radius. A lumbar artery a
+        # millimetre across and a renal four times that should not share a
+        # fitting window, so the radius is measured once on a provisional fit
+        # and the direction is then fitted again at the right scale.
+        direction = fit_direction(6.5)
         radius = measure_radius(ct, vessel, seed_mm, direction, spacing, window["hu_low"])
         if radius is None:
             seed_vox = np.clip(np.round(seed_mm / spacing).astype(int), 0,
                                np.array(ct.shape) - 1)
             radius = float(ndi.distance_transform_edt(component, sampling=spacing)[tuple(seed_vox)])
+        else:
+            scaled = float(np.clip(3.0 * radius, 3.0, 9.0))
+            direction = fit_direction(scaled)
+            refined = measure_radius(ct, vessel, seed_mm, direction, spacing, window["hu_low"])
+            if refined is not None:
+                radius = refined
 
         path_hu = ndi.map_coordinates(ct, np.moveaxis(pts / spacing, -1, 0),
                                       order=1, mode="nearest")

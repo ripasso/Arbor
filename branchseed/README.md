@@ -67,6 +67,21 @@ the wall is the one used. Too high and faint branches never reach the wall; too
 low and adjacent liver and bowel fuse the footprints into one sheet. The peak
 between those failures is a stable operating point.
 
+**1b — Refuse scans that are not angiograms.** The whole method rests on a
+daughter lumen being brighter than the tissue it runs through, which is only
+true when the parent is opacified. The lower quartile of the aortic lumen is
+tested against an absolute floor of 150 HU: iodinated arterial blood sits far
+above it, unopacified blood sits near 40. Across the development set this reads
+194 HU or higher on twenty-three cases and 50 and 18 on subjects 18 and 24,
+which are not contrast studies at all. Above the floor nothing changes. Below
+it, the acceptance bar rises to something only a genuinely bright, tubular
+structure can clear, and the case is flagged in the output. An earlier build
+returned 34 and 16 daughters on those two scans; every one was noise.
+
+Comparing the lumen against its local background instead does not work here:
+the vertebral body and other opacified vessels sit in that background and drag
+it up on perfectly good scans.
+
 **2 — One footprint, one ostium.** Where bright tissue meets the wall it leaves
 a patch, and each patch is one daughter instance. That is the rule the brief
 sets out: two origins are separate only when they are separate at the wall, and
@@ -85,6 +100,33 @@ point 5 mm along that path. The direction is a line fit over the first 6 mm. The
 radius is measured on a half-maximum contour in the plane across the vessel at
 the seed, which keeps it sub-voxel on 1.5 mm scans instead of stepping in
 half-voxel jumps.
+
+**Taken from prior work.** The pipeline was written from first principles and
+then checked against the literature on the same task, which corrected two
+things:
+
+* *The centre of an opening is not the centroid of its footprint.* Tahoces et
+  al. (Med Biol Eng Comput 2020) take the contact point as the voxel furthest
+  from the edge of the contact area. An opening cut obliquely through the wall
+  is often crescent shaped, and on 467 contact patches measured here the
+  centroid fell outside its own patch 26.8% of the time, usually landing inside
+  the aortic lumen; the rim-distance maximum is inside every time. The reported
+  ostium moves by a median of 1.5 mm, against an inter-observer agreement of
+  2.5 mm reported in that same paper. The distance has to be measured along the
+  wall: the contact patch is one voxel thick, so an ordinary distance transform
+  of it is half a voxel everywhere and its maximum falls wherever ties break.
+* *The direction window should scale with the vessel.* Riffaud et al. (Med Biol
+  Eng Comput 2022) fit a branch's direction over three times its own radius. A
+  flat window makes a 1 mm lumbar artery and a 4 mm renal share a fit, so the
+  radius is measured on a provisional fit and the direction fitted again at the
+  right scale.
+
+One thing from the literature did not survive contact with this data. Danilov
+et al. (Computation 2016) clean vessel masks by walking distance layers inward
+from the farthest one and dropping voxels with no neighbour further out. Ported
+directly, it anchors on each label's farthest point, which here is frequently a
+leak rather than the vessel, so it kept the leak and deleted the branch. It
+cost subject 2 both its coeliac and mesenteric arteries and was reverted.
 
 **Geometry.** The centerline is a geodesic between the two ends of the lumen,
 traced through a cost field that prefers the centre so it does not hug the wall

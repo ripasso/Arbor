@@ -87,14 +87,27 @@ def process_case(image_path: str, mask_path: str, case_id: str,
 
     calcium_ceiling = stats.get("lumen_p98", stats["lumen_median"]) + 110.0
 
+    # On a scan where the aorta itself is not opacified there is no brightness
+    # difference left to separate a daughter lumen from the muscle and fat
+    # around it, so nothing below is trustworthy. Rather than emit a long list
+    # of texture, the bar is raised to something only a genuinely bright,
+    # genuinely tubular structure could clear, and the case is flagged.
+    low_contrast = not stats.get("contrast_ok", True)
+    min_reach = 8.0 if low_contrast else MIN_REACH_MM
+    min_radius = 1.20 if low_contrast else MIN_SEED_RADIUS_MM
+    bright_floor = stats.get("lumen_p75", stats["lumen_median"]) if low_contrast else None
+
     daughters, rejected, extras = [], [], []
     for cand in found:
         reason = None
-        if cand["reach_mm"] < MIN_REACH_MM:
-            reason = "shorter than 5 mm beyond the wall"
+        if cand["reach_mm"] < min_reach:
+            reason = ("shorter than 5 mm beyond the wall" if not low_contrast
+                      else "too short to trust on an unopacified scan")
+        elif bright_floor is not None and cand["path_hu_median"] < bright_floor:
+            reason = "no brighter than the unopacified parent lumen"
         elif cand["straight_mm"] < 2.6 or cand["seed_wall_clearance_mm"] < 1.0:
             reason = "creeps along the wall instead of leaving it"
-        elif cand["radius_mm"] < MIN_SEED_RADIUS_MM:
+        elif cand["radius_mm"] < min_radius:
             reason = "lumen too small at the seed"
         elif cand["ostium_radius_mm"] < MIN_OSTIUM_RADIUS_MM:
             reason = "origin below the minimum size"

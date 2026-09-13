@@ -34,13 +34,14 @@ SPRITE_COLS = 8
 # unwrapped surface image
 # --------------------------------------------------------------------------- #
 
+# white where nothing leaves the wall, ink where a daughter does
 _MAP_STOPS = np.array([
-    [20, 11, 27],
-    [61, 18, 51],
-    [122, 27, 61],
-    [184, 65, 47],
-    [224, 132, 44],
-    [246, 217, 160],
+    [255, 255, 255],
+    [214, 219, 226],
+    [156, 165, 178],
+    [96, 106, 122],
+    [42, 50, 64],
+    [8, 11, 18],
 ], dtype=float)
 
 
@@ -60,8 +61,8 @@ def unwrap_image(unwrap, out_path: str, scale: int = 3):
     depth = ndi.gaussian_filter(depth, sigma=(0.8, 1.2), mode=("nearest", "wrap"))
     # a millimetre or so of brightness beyond the wall is noise and partial
     # volume rather than a vessel, so hold it at the floor of the ramp
-    norm = np.clip((depth - 1.3) / 6.0, 0.0, 1.0)
-    norm = np.power(norm, 0.8)
+    norm = np.clip((depth - 1.0) / 4.3, 0.0, 1.0)
+    norm = np.power(norm, 0.7)
     rgb = _colormap(norm)
     img = Image.fromarray(rgb, mode="RGB")
     img = img.resize((depth.shape[1] * scale, depth.shape[0] * scale), Image.BICUBIC)
@@ -134,8 +135,8 @@ def slice_sprites(record, ct_path: str, mask_path: str):
         binary = msk[::-1] > 0.5
         edge = binary ^ ndi.binary_erosion(binary)
         tile = np.zeros((SLICE_PX, SLICE_PX, 4), dtype=np.uint8)
-        tile[binary] = (64, 196, 255, 40)
-        tile[edge] = (110, 226, 255, 235)
+        tile[binary] = (92, 146, 230, 34)
+        tile[edge] = (46, 104, 200, 225)
         overlay[y0:y0 + SLICE_PX, x0:x0 + SLICE_PX] = tile
 
     Image.fromarray(sheet, mode="L").convert("RGB").save(ct_path, quality=72,
@@ -221,6 +222,11 @@ def export_case(record, out_dir: str):
             slice_z=round(float(c["ostium_mm"] @ superior), 2),
             slice_left=round(float(c["ostium_mm"] @ left), 2),
             slice_anterior=round(float(c["ostium_mm"] @ anterior), 2),
+            seed_z=round(float(c["seed_mm"] @ superior), 2),
+            seed_left=round(float(c["seed_mm"] @ left), 2),
+            seed_anterior=round(float(c["seed_mm"] @ anterior), 2),
+            seed_hu=round(float(c["seed_hu"]), 0),
+            wall_clearance_mm=round(float(c["seed_wall_clearance_mm"]), 2),
             dir_left=round(float(c["direction_mm"] @ left), 3),
             dir_anterior=round(float(c["direction_mm"] @ anterior), 3),
             dir_superior=round(float(c["direction_mm"] @ superior), 3),
@@ -241,6 +247,10 @@ def export_case(record, out_dir: str):
         aorta_length_mm=round(float(record["arc_mm"][-1]), 1),
         lumen_hu=round(float(record["stats"]["lumen_median"]), 0),
         hu_low=round(float(record["stats"]["hu_low"]), 0),
+        opacification_hu=round(float(record["stats"].get("opacification_hu", 0.0)), 0),
+        contrast_margin=round(float(record["stats"].get("contrast_margin", 0.0)), 0),
+        contrast_ok=bool(record["stats"].get("contrast_ok", True)),
+        peak_rss_gb=record.get("peak_rss_gb"),
         mean_diameter_mm=round(float(record["radius_profile"].mean() * 2), 1),
         min_diameter_mm=round(float(np.percentile(record["radius_profile"], 5) * 2), 1),
         max_diameter_mm=round(float(record["radius_profile"].max() * 2), 1),
