@@ -5,3 +5,8 @@ __pycache__/
 TORALIS CHALLENGE/
 data/
 outputs/
+TORALIS CHALLENGE /
+*.nii
+*.nii.gz
+*.json
+*.png

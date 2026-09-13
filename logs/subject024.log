@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/Users/farhadsadig/Desktop/Arbor/run.py", line 161, in <module>
+    main()
+    ~~~~^^
+  File "/Users/farhadsadig/Desktop/Arbor/run.py", line 156, in main
+    prediction = run_pipeline(args.image, args.aorta_mask, case_id, label_map_path=label_path)
+  File "/Users/farhadsadig/Desktop/Arbor/run.py", line 42, in run_pipeline
+    case = io_utils.load_case(image_path, mask_path, case_id)
+  File "/Users/farhadsadig/Desktop/Arbor/io_utils.py", line 69, in load_case
+    image = load_image_any_extension(image_path)
+  File "/Users/farhadsadig/Desktop/Arbor/io_utils.py", line 59, in load_image_any_extension
+    return sitk.ReadImage(tmp_path)
+           ~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/farhadsadig/Desktop/Arbor/venv/lib/python3.14/site-packages/SimpleITK/extra.py", line 382, in ReadImage
+    return reader.Execute()
+           ~~~~~~~~~~~~~~^^
+  File "/Users/farhadsadig/Desktop/Arbor/venv/lib/python3.14/site-packages/SimpleITK/SimpleITK.py", line 8534, in Execute
+    return _SimpleITK.ImageFileReader_Execute(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+RuntimeError: Exception thrown in SimpleITK ImageFileReader_Execute: /Users/ec2-user/actions-runner/_work/SimpleITK/SimpleITK/bld/ITK/Modules/IO/NIFTI/src/itkNiftiImageIO.cxx:2135:
+ITK ERROR: ITK only supports orthonormal direction cosines.  No orthonormal definition found!

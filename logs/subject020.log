@@ -1,0 +1,5 @@
+raw components: 3
+touching aorta: 2
+  component 5: 23 contact voxels, 1 wall zones
+  component 6: 40 contact voxels, 1 wall zones
+ostia after dedup: 2
