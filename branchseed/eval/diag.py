@@ -23,9 +23,9 @@ from scipy.optimize import linear_sum_assignment
 
 import pipeline as pl
 
-REFS = "/mnt/user-data/uploads/EVAL_SET"
-DATA = "/home/claude/branchseed/data"
-CACHE = "/home/claude/branchseed/out/diagcache"
+REFS = os.environ.get("BRANCHSEED_REFS", "/Users/rastinabbaspour/Downloads/EVAL_SET")
+DATA = os.environ.get("BRANCHSEED_DATA", "/Users/rastinabbaspour/Downloads/TORALIS CHALLENGE ")
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "out", "diagcache")
 CASES = [19, 20, 21, 22, 23]
 TOL_MM = 6.0
 

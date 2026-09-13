@@ -21,7 +21,8 @@ import diag
 import pipeline as pl
 
 CASES = [19, 20, 21, 22, 23]
-CACHE = "/home/claude/branchseed/out/candcache"
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "out", "candcache")
+DATA = os.environ.get("BRANCHSEED_DATA", "/Users/rastinabbaspour/Downloads/TORALIS CHALLENGE ")
 TOL_MM = 6.0
 
 
@@ -35,8 +36,8 @@ def cached(force=False):
                 out[num] = pickle.load(fh)
                 continue
         case = f"subject{num:03d}"
-        image = glob.glob(f"/home/claude/branchseed/data/{case}/orig*.nii")[0]
-        mask = glob.glob(f"/home/claude/branchseed/data/{case}/mask*.nii")[0]
+        image = glob.glob(f"{DATA}/{case}/orig*.nii")[0]
+        mask = glob.glob(f"{DATA}/{case}/mask*.nii")[0]
         rec = pl.process_case(image, mask, case, want_maps=False)
         slim = dict(stats=rec["stats"], candidates=rec["candidates"],
                     aorta_length_mm=rec["aorta_length_mm"])

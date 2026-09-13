@@ -86,6 +86,15 @@ Comparing the lumen against its local background instead does not work here:
 the vertebral body and other opacified vessels sit in that background and drag
 it up on perfectly good scans.
 
+**1c — Hold weak studies to their own contrast.** A study can be opacified but
+dim: the aorta reads 250 HU instead of 500, and the ladder has to run far
+enough down that enhanced liver and bowel present as candidates. A daughter
+lumen carries the parent's opacified blood, so on such a study anything much
+dimmer than the parent lumen is enhanced tissue, not an artery, and below 70
+per cent of the lumen it is refused. On strong studies the floor never engages:
+partial volume on a 1.5 mm grid can read a real daughter well below its lumen,
+and the confirmed daughters on such scans do read that low.
+
 **2 — One footprint, one ostium.** Where bright tissue meets the wall it leaves
 a patch, and each patch is one daughter instance. That is the rule the brief
 sets out: two origins are separate only when they are separate at the wall, and
@@ -189,7 +198,7 @@ direction vector drawn as it projects into that slice.
 ## Accuracy
 
 A draft reference exists for five of the twenty-five cases, 19 daughter
-instances in all. Against it: F1 0.491, recall 0.684, precision 0.382, median
+instances in all. Against it: F1 0.605, recall 0.684, precision 0.542, median
 ostium error 1.47 mm against an inter-observer agreement of 2.5 mm. Its authors
 describe it as expert-review-pending and state that it is not exhaustive, so
 **recall against it is meaningful and precision is pessimistic by an unknown

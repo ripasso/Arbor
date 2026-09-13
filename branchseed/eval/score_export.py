@@ -17,7 +17,7 @@ from scipy.optimize import linear_sum_assignment
 import diag
 import score as sc
 
-OUT = "/home/claude/branchseed/out"
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "out")
 
 
 def build():

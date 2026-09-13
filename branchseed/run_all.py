@@ -10,6 +10,9 @@ ASSETS = os.path.join(OUT, "assets")
 PRED = os.path.join(OUT, "predictions")
 os.makedirs(PRED, exist_ok=True); os.makedirs(ASSETS, exist_ok=True)
 
+# ru_maxrss is kilobytes on Linux and bytes on macOS; both to GB here
+RSS_GB = (lambda v: v / 1e6) if sys.platform.startswith("linux") else (lambda v: v / 1e9)
+
 subs = sorted(os.listdir(DATA))
 if len(sys.argv) > 1: subs = sys.argv[1:]
 entries = []
@@ -18,15 +21,15 @@ for s in subs:
     try:
         o = glob.glob(d+"/orig*.nii")[0]; m = glob.glob(d+"/mask*.nii")[0]
         t0=time.time()
-        rss0 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e6
+        rss0 = RSS_GB(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         r = process_case(o, m, s)
-        r["peak_rss_gb"] = round(max(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e6, rss0), 2)
+        r["peak_rss_gb"] = round(max(RSS_GB(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss), rss0), 2)
         with open(os.path.join(PRED, f"{s}.json"), "w") as fh:
             json.dump(to_prediction(r), fh, indent=2)
         e = export_case(r, ASSETS)
         e["seconds"] = round(time.time()-t0, 2)
         entries.append(e)
-        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e6
+        peak = RSS_GB(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         print(f"{s}: {e['seconds']:5.1f}s  daughters={len(e['daughters'])} extras={len(e['extras'])} "
               f"len={e['aorta_length_mm']:.0f}mm zones={len(e['landing_zones'])} peakRSS={peak:.1f}GB")
     except Exception:

@@ -44,6 +44,15 @@ DEFAULTS = dict(
     # low-contrast studies
     lc_min_reach_mm=8.0,
     lc_min_radius_mm=1.20,
+    # weak-but-real angiograms: the parent is opacified but dim, so the
+    # threshold ladder runs far enough down that enhanced liver and bowel
+    # present as candidates. A daughter lumen carries the parent's opacified
+    # blood, so on such a study anything much dimmer than the parent lumen
+    # is enhanced tissue, not an artery. On strong studies this floor never
+    # engages: everything enhanced is bright there, and a real daughter on a
+    # 1.5 mm grid can read well below the lumen through partial volume.
+    weak_lumen_hu=300.0,
+    weak_hu_fraction=0.70,
 )
 
 MIN_REACH_MM = DEFAULTS["min_reach_mm"]
@@ -77,6 +86,10 @@ def classify(found, stats, aorta_length_mm, params=None):
     min_radius = p["lc_min_radius_mm"] if low_contrast else p["min_seed_radius_mm"]
     bright_floor = (stats.get("lumen_p75", stats["lumen_median"])
                     if low_contrast else None)
+    weak_study = (not low_contrast
+                  and stats.get("lumen_median", 1e9) < p["weak_lumen_hu"])
+    weak_floor = (p["weak_hu_fraction"] * stats.get("lumen_median", 0.0)
+                  if weak_study else None)
     terminal_window = min(p["terminal_end_mm"],
                           p["terminal_end_fraction"] * max(aorta_length_mm, 1.0))
 
@@ -88,6 +101,8 @@ def classify(found, stats, aorta_length_mm, params=None):
                       else "too short to trust on an unopacified scan")
         elif bright_floor is not None and cand["path_hu_median"] < bright_floor:
             reason = "no brighter than the unopacified parent lumen"
+        elif weak_floor is not None and cand["path_hu_median"] < weak_floor:
+            reason = "much dimmer than the parent lumen, reads as enhanced tissue"
         elif (cand["straight_mm"] < p["min_straight_mm"]
               or cand["seed_wall_clearance_mm"] < p["min_clearance_mm"]):
             reason = "creeps along the wall instead of leaving it"

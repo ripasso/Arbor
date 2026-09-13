@@ -17,7 +17,8 @@ import numpy as np
 import diag
 import pipeline as pl
 
-CACHE = "/home/claude/branchseed/out/diagcache"
+CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "out", "diagcache")
+DATA = os.environ.get("BRANCHSEED_DATA", "/Users/rastinabbaspour/Downloads/TORALIS CHALLENGE ")
 CASES = [19, 20, 21, 22, 23]
 
 
@@ -31,8 +32,8 @@ def records(force=False):
                 out[num] = pickle.load(fh)
             continue
         case = f"subject{num:03d}"
-        image = glob.glob(f"/home/claude/branchseed/data/{case}/orig*.nii")[0]
-        mask = glob.glob(f"/home/claude/branchseed/data/{case}/mask*.nii")[0]
+        image = glob.glob(f"{DATA}/{case}/orig*.nii")[0]
+        mask = glob.glob(f"{DATA}/{case}/mask*.nii")[0]
         rec = pl.process_case(image, mask, case, want_maps=False)
         slim = dict(case_id=rec["case_id"], stats=rec["stats"],
                     daughters=rec["daughters"], extras=rec["extras"],
