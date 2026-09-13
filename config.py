@@ -6,7 +6,7 @@ without hunting through the pipeline modules.
 """
 
 # --- Stage B: search shell ---
-SEARCH_SHELL_MARGIN_MM = 6.0        # how far to dilate the aorta mask outward
+SEARCH_SHELL_MARGIN_MM = 15.0        # how far to dilate the aorta mask outward
 
 # --- Stage C: vesselness (Frangi) ---
 FRANGI_SCALES_MM = [1.0, 1.5, 2.0, 3.0]   # sigma values for multi-scale Hessian
