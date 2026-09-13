@@ -1,0 +1,1170 @@
+<title>The Unrolled Aorta</title>
+
+<style>
+:root{
+  --paper:#FFFFFF;
+  --fill:#F5F5F5;
+  --fill-2:#EDEDED;
+  --ink:#121212;
+  --ink-2:#565656;
+  --ink-3:#8A8A8A;
+  --rule:#E3E3E3;
+  --rule-2:#C9C9C9;
+  --origin:#C0284C;
+  --origin-soft:#F6E2E7;
+  --zone:#2C62C4;
+  --flag:#9A6A05;
+  --flag-soft:#FBF0DA;
+  --film:#0C0C0C;
+  --sans:"Helvetica Neue",Helvetica,Arial,"Liberation Sans",sans-serif;
+}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:24px;padding-block:0 80px}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:700;letter-spacing:-.02em}
+.num{font-variant-numeric:tabular-nums}
+.lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+
+/* ---------- masthead ---------- */
+.mast{padding-block:40px 26px;border-bottom:2px solid var(--ink)}
+.mastrow{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:baseline}
+h1{font-size:clamp(36px,6vw,60px);line-height:1;margin-block:18px 0}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:40px;align-items:start;margin-top:20px}
+.thesis{max-width:52ch;color:var(--ink-2);font-size:16.5px}
+.thesis strong{color:var(--ink);font-weight:600}
+.demo{border:1px solid var(--rule);padding:12px}
+.demo canvas{width:100%;height:auto;display:block}
+.demorow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px}
+
+/* ---------- scorecard ---------- */
+.card-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;
+  border:1px solid var(--rule);border-right:none;margin-top:26px}
+.card{border-right:1px solid var(--rule);padding:13px 15px;min-width:0}
+.card .t{font-size:12.5px;font-weight:600;margin-top:0}
+.card .d{font-size:11.5px;color:var(--ink-3);margin-top:3px;line-height:1.35}
+.card a{color:inherit;text-decoration:none;display:block}
+.card a:hover .t{text-decoration:underline}
+
+/* ---------- sections ---------- */
+section{padding-block:52px 0;scroll-margin-top:16px}
+.shead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--ink);padding-bottom:8px}
+.shead h2{font-size:clamp(20px,2.5vw,26px)}
+.shead .lbl{margin-left:auto}
+.lede{max-width:72ch;color:var(--ink-2);margin-block:16px 22px}
+.sub{font-size:13px;font-weight:700;margin-block:26px 8px}
+
+/* ---------- controls ---------- */
+.btn{border:1px solid var(--rule-2);background:var(--paper);color:var(--ink);font:inherit;
+  font-size:12.5px;padding:6px 12px;cursor:pointer;border-radius:0}
+.btn:hover{background:var(--fill)}
+.btn:focus-visible{outline:2px solid var(--origin);outline-offset:2px}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+.picker{display:flex;gap:0;overflow-x:auto;padding-block:2px 14px;border-bottom:1px solid var(--rule)}
+.chip{flex:0 0 auto;border:1px solid var(--rule);border-right:none;background:var(--paper);
+  color:var(--ink-2);font:inherit;font-size:12px;padding:6px 10px;cursor:pointer;
+  display:flex;gap:6px;align-items:center}
+.chip:last-child{border-right:1px solid var(--rule)}
+.chip b{color:var(--ink);font-weight:600}
+.chip i{font-style:normal;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.chip u{text-decoration:none;color:var(--flag);font-weight:700}
+.chip:hover{background:var(--fill)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip[aria-pressed="true"] b,.chip[aria-pressed="true"] i,.chip[aria-pressed="true"] u{color:#fff}
+.chip:focus-visible{outline:2px solid var(--origin);outline-offset:-2px}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;font-size:13px}
+.tablewrap{overflow-x:auto;border-top:2px solid var(--ink)}
+th,td{padding:6px 11px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;
+  position:sticky;top:0;background:var(--paper)}
+th button{all:unset;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+th button:focus-visible{outline:2px solid var(--origin);outline-offset:2px}
+th[aria-sort] button{color:var(--ink)}
+th .arrow{opacity:.35}
+th[aria-sort] .arrow{opacity:1}
+td.n{font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--fill)}
+tbody tr.pickable{cursor:pointer}
+tbody tr.flagged td:first-child::after{content:"low contrast";font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--flag);background:var(--flag-soft);padding:1px 5px;margin-left:8px}
+tfoot td{border-bottom:none;border-top:2px solid var(--ink);font-weight:700;padding-top:8px}
+
+/* ---------- stage ---------- */
+.stage{display:grid;grid-template-columns:112px minmax(0,1fr) 300px;gap:20px;margin-top:20px}
+.pane{min-width:0}
+.pane-hd{margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid var(--rule)}
+.mapwrap{position:relative;line-height:0;border:1px solid var(--rule-2)}
+.mapwrap img{width:100%;height:var(--maph);display:block}
+#pins{position:absolute;inset:0;line-height:normal}
+#pins .noon{position:absolute;left:50%;top:0;bottom:0;width:0;border-left:1px dashed rgba(0,0,0,.28)}
+#pins .pin{position:absolute;transform:translate(-50%,-50%);width:28px;height:19px;border-radius:50%;
+  border:1.5px solid var(--origin);cursor:pointer;transition:opacity .12s,border-width .12s}
+#pins .pin::before{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;
+  border-radius:50%;background:var(--origin)}
+#pins .pin b{position:absolute;left:32px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;
+  color:var(--origin);background:rgba(255,255,255,.86);padding:0 3px}
+#pins .pin.on{border-width:3px}
+#pins.dim .pin:not(.on){opacity:.35}
+.clockaxis{display:flex;justify-content:space-between;margin-top:7px;font-size:10.5px;color:var(--ink-3)}
+.clockaxis span:nth-child(3){color:var(--ink-2);font-weight:600}
+
+.blist{display:flex;flex-direction:column;max-height:var(--maph);overflow-y:auto}
+.bcard{border:none;border-bottom:1px solid var(--rule);background:none;padding:9px 10px 9px 12px;
+  cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit;position:relative}
+.bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--origin)}
+.bcard:hover,.bcard.on{background:var(--origin-soft)}
+.bcard:focus-visible{outline:2px solid var(--origin);outline-offset:-2px}
+.bcard .row1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.bcard .clock{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.bcard .id{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.bcard .row2{display:flex;gap:11px;font-size:11.5px;color:var(--ink-2);margin-top:3px;flex-wrap:wrap;
+  font-variant-numeric:tabular-nums}
+.empty{font-size:13px;color:var(--ink-3);padding:12px 0}
+.flagbox{border-left:3px solid var(--flag);background:var(--flag-soft);padding:10px 13px;
+  font-size:13px;color:#5B4508;margin-bottom:16px;max-width:78ch}
+
+/* ---------- scan viewer ---------- */
+.scan{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:22px;align-items:start}
+.canvasbox{border:1px solid var(--rule-2);padding:10px}
+.ctrl{display:flex;gap:10px;align-items:center;margin-top:10px}
+input[type=range]{flex:1;accent-color:var(--ink)}
+.legend{display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--ink-2)}
+.legend .item{display:flex;gap:9px;align-items:flex-start}
+.swatch{width:12px;height:12px;flex:0 0 auto;margin-top:4px}
+.readout{font-size:11.5px;color:var(--ink-3);margin-top:9px;font-variant-numeric:tabular-nums}
+
+/* ---------- linked views ---------- */
+.views{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;align-items:start}
+.views figure{margin:0;min-width:0}
+.views figcaption{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:5px;font-weight:500}
+.views figcaption b{color:var(--ink-2);font-weight:700}
+.views canvas{width:100%;height:auto;display:block;background:var(--film);
+  border:1px solid var(--rule-2)}
+
+/* ---------- evidence contact sheet ---------- */
+.evidstrip{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px}
+.evidcase{flex:0 0 auto}
+.evidcase .hd{font-size:10px;color:var(--ink-3);padding-bottom:4px;font-variant-numeric:tabular-nums}
+.evidrow{display:flex;gap:5px}
+.evid{position:relative;flex:0 0 auto;width:132px;height:132px;border:1px solid var(--rule-2);
+  cursor:pointer;background-repeat:no-repeat;padding:0;background-color:var(--film)}
+.evid:hover,.evid.on{border-color:var(--origin);outline:1px solid var(--origin)}
+.evid .lab{position:absolute;left:4px;top:3px;font-size:10.5px;font-weight:700;color:#fff;
+  text-shadow:0 0 3px #000,0 0 2px #000;font-variant-numeric:tabular-nums}
+.evid .os{position:absolute;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;
+  border:1.5px solid var(--origin)}
+.evid .sd{position:absolute;width:6px;height:6px;margin:-3px 0 0 -3px;background:#fff;
+  border:1px solid rgba(0,0,0,.75)}
+
+/* ---------- strips ---------- */
+.stripscroll{overflow-x:auto;padding-bottom:10px}
+.strips{display:flex;gap:4px;align-items:flex-start;min-width:min-content}
+.striprule{flex:0 0 34px;position:relative}
+.striprule span{position:absolute;right:4px;transform:translateY(-50%);font-size:10px;
+  color:var(--ink-3);font-variant-numeric:tabular-nums}
+.strip{flex:0 0 auto;width:40px;cursor:pointer;background:none;border:none;padding:0;font:inherit}
+.strip .frame{position:relative;border:1px solid var(--rule-2);line-height:0}
+.strip img{width:100%;height:100%;display:block}
+.strip .o{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
+  border:1.5px solid var(--origin);background:rgba(255,255,255,.5)}
+.strip figcaption{font-size:10px;color:var(--ink-3);text-align:center;padding-bottom:5px;
+  font-variant-numeric:tabular-nums}
+.strip:hover .frame{border-color:var(--ink)}
+.strip.sel .frame{border-color:var(--origin);outline:1px solid var(--origin)}
+.strip.sel figcaption{color:var(--origin);font-weight:600}
+.strip.flag figcaption{color:var(--flag)}
+.strip:focus-visible{outline:2px solid var(--origin);outline-offset:2px}
+
+/* ---------- misc ---------- */
+.grid2{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:28px;align-items:start}
+figure{margin:0}
+figcaption.note{font-size:12.5px;color:var(--ink-3);margin-top:10px;max-width:58ch}
+.chartsvg{width:100%;height:auto;display:block;overflow:visible}
+.keyrow{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-bottom:10px;align-items:center}
+.keyrow span{display:flex;gap:7px;align-items:center}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:8px}
+.note h3{font-size:13.5px;font-weight:700;margin-bottom:5px}
+.note p{margin:0;color:var(--ink-2);font-size:13.5px}
+pre{background:var(--fill);padding:12px 14px;overflow-x:auto;font-size:12.5px;margin:0 0 14px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-left:3px solid var(--rule-2)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--fill)}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);color:var(--ink-3);font-size:12.5px}
+
+@media (max-width:1000px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .card-strip{grid-template-columns:repeat(2,minmax(0,1fr));border-right:1px solid var(--rule)}
+  .stage{grid-template-columns:92px minmax(0,1fr)}
+  .blist{grid-column:1/-1;max-height:none;flex-direction:row;overflow-x:auto}
+  .bcard{flex:0 0 200px;border-bottom:none;border-right:1px solid var(--rule)}
+  .scan{grid-template-columns:minmax(0,1fr)}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .card-strip{grid-template-columns:minmax(0,1fr)}
+  .stage{grid-template-columns:minmax(0,1fr)}
+  .rulerpane{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="mastrow">
+    <p class="lbl" style="margin:0">Branchseed &middot; Toralis Labs</p>
+    <p class="lbl" style="margin:0" id="ncases">25 CT angiograms</p>
+  </div>
+  <h1>The Unrolled Aorta</h1>
+  <div class="hero">
+    <div>
+      <p class="thesis">Find every artery that leaves the supplied aorta and return each as a separate daughter instance. <strong>Cut the aortic wall open along its length and flatten it</strong>, and that search becomes a reading: every daughter is a mark at a distance and a clock position. This page is the submission, laid out against the five things it is scored on.</p>
+    </div>
+    <div class="demo">
+      <canvas id="unrollcanvas" width="760" height="480" aria-label="An aortic wall opening out from a tube into a flat map"></canvas>
+      <div class="demorow">
+        <span class="lbl" id="unrolllabel">the wall of one aorta</span>
+        <button class="btn" id="unrollbtn" type="button">Unroll it again</button>
+      </div>
+    </div>
+  </div>
+  <div class="card-strip" id="scorecard"></div>
+</header>
+
+<section id="discovery">
+  <div class="shead"><h2>Branch discovery</h2><span class="lbl">how many daughters, and which</span></div>
+  <p class="lede">The table below is what the pipeline returns, not a grade. The counts come with no per-case adjustment anywhere, and the rejection ledger underneath is where candidates are actually spent: far more are refused than accepted, each for a stated reason.</p>
+
+  <div class="tablewrap">
+    <table id="casetable">
+      <thead><tr>
+        <th data-k="case_id" data-t="s">Case</th>
+        <th data-k="daughters">Daughters</th>
+        <th data-k="aorta_length_mm">Segment</th>
+        <th data-k="density">Per 100 mm</th>
+        <th data-k="lumen_hu">Lumen</th>
+        <th data-k="opacification_hu">Opacification</th>
+        <th data-k="mean_diameter_mm">Mean &empty;</th>
+        <th data-k="rejectedn">Rejected</th>
+        <th data-k="seconds">Runtime</th>
+      </tr></thead>
+      <tbody></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+  <p class="readout">Click any column to sort, any row to open that case. Opacification is the lower quartile of the aortic lumen in Hounsfield units. Iodinated arterial blood sits far above 150 HU; unopacified blood sits near 40.</p>
+
+  <h3 class="sub">Two scans are not angiograms, and the pipeline says so</h3>
+  <p class="lede" style="margin-top:0">On subjects 18 and 24 the aorta was never opacified, so a daughter lumen cannot be told from muscle by brightness and there is nothing to find. An earlier build returned 34 and 16 daughters on those two; both were noise. The test is the lower quartile of the aortic lumen against an absolute floor of 150 HU, which reads 194 HU or higher on the other twenty-three cases and 50 and 18 on these two. The groups do not overlap. Above the floor nothing changes; below it the bar rises to something only a genuinely bright tubular structure can clear. This costs recall on two cases and protects precision on all of them.</p>
+  <div class="grid2">
+    <figure>
+      <svg id="marginchart" class="chartsvg" role="img" aria-label="Aortic opacification for each case, with the two unopacified cases marked"></svg>
+    </figure>
+    <figure>
+      <div class="keyrow"><span>every candidate the pipeline considered, across all cases</span></div>
+      <svg id="rejectchart" class="chartsvg" role="img" aria-label="Why candidates were rejected, by count"></svg>
+    </figure>
+  </div>
+
+  <h3 class="sub">Every detection, in the plane that shows it best</h3>
+  <p class="lede" style="margin-top:0">One thumbnail per daughter, cut in the plane containing both that branch's own direction and the aortic axis, then projected through a five millimetre slab. The aorta runs vertically in each frame and the branch runs to the right. Every detection is here, in case order, not a selection of the convincing ones. Click any thumbnail to open it.</p>
+  <div class="keyrow">
+    <span><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4" fill="none" stroke="var(--origin)" stroke-width="1.5"></circle></svg>reported ostium</span>
+    <span><svg width="9" height="9"><rect width="9" height="9" fill="#fff" stroke="#555"></rect></svg>seed, 5 mm along</span>
+  </div>
+  <div class="evidstrip" id="evidstrip"></div>
+
+  <h3 class="sub">Twenty-five aortas, side by side</h3>
+  <p class="lede" style="margin-top:0">The same flattening applied to every case and hung on one scale, so a column is a patient and a row across is a depth. Segment lengths differ enormously, which is most of why the counts differ. Click a strip to open that case.</p>
+  <div class="keyrow">
+    <span><svg width="9" height="9"><circle cx="4.5" cy="4.5" r="3.4" fill="none" stroke="var(--origin)" stroke-width="1.5"></circle></svg>detected daughter</span>
+    <span>each strip is the full 360&deg; of wall, twelve o'clock down the middle</span>
+  </div>
+  <div class="stripscroll"><div class="strips" id="strips"></div></div>
+</section>
+
+<section id="ostium">
+  <div class="shead"><h2>Ostium localisation</h2><span class="lbl">where each opening is</span></div>
+  <p class="lede">Scored on physical distance between the predicted and reference ostium centre. The map below is where those centres come from: vertical is distance down the supplied segment, horizontal is position around the wall, and darkness is how far contrast-filled tissue continues outward. Each centre is the point furthest from the rim of the patch where that tissue meets the wall, reported in the millimetre frame SimpleITK returns, not voxel indices.</p>
+  <div class="picker" id="picker" role="group" aria-label="Choose a case"></div>
+  <div id="flagslot"></div>
+  <div class="stage" id="stage">
+    <div class="pane rulerpane">
+      <p class="lbl pane-hd">Calibre</p>
+      <svg id="ruler" class="chartsvg" role="img" aria-label="Aortic diameter down the segment, with branch-free stretches marked"></svg>
+    </div>
+    <div class="pane">
+      <p class="lbl pane-hd">Flattened wall</p>
+      <div class="mapwrap" id="mapwrap">
+        <img id="unwrapimg" alt="Flattened map of the aortic wall for the selected case">
+        <div id="pins" aria-hidden="true"><i class="noon"></i></div>
+      </div>
+      <div class="clockaxis"><span>6</span><span>9</span><span>12 o'clock</span><span>3</span><span>6</span></div>
+    </div>
+    <div class="pane">
+      <p class="lbl pane-hd">Daughters found</p>
+      <div class="blist" id="blist"></div>
+    </div>
+  </div>
+</section>
+
+<section id="quality">
+  <div class="shead"><h2>Daughter-instance quality</h2><span class="lbl">seed, direction, radius</span></div>
+  <p class="lede">Scored on three things: whether the seed lies on the matched daughter, whether the direction follows its proximal path, and whether the radius matches the daughter lumen. All three come from the same walk outward from the opening, shell by shell, stopping at the first bifurcation or ten millimetres. Pick a daughter and the viewer jumps to the slice its opening sits on, with the seed and direction drawn where they land.</p>
+  <div class="scan">
+    <div class="canvasbox">
+      <div class="views">
+        <figure>
+          <figcaption><b>Axial</b> &middot; from above</figcaption>
+          <canvas id="ctcanvas" width="520" height="520"></canvas>
+        </figure>
+        <figure>
+          <figcaption><b>Coronal</b> &middot; from the front</figcaption>
+          <canvas id="corcanvas" width="280" height="460"></canvas>
+        </figure>
+        <figure>
+          <figcaption><b>Sagittal</b> &middot; from the side</figcaption>
+          <canvas id="sagcanvas" width="280" height="460"></canvas>
+        </figure>
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="prev" aria-label="Previous slice">&larr;</button>
+        <input type="range" id="slider" min="0" max="1" value="0" aria-label="Slice position">
+        <button class="btn" id="next" aria-label="Next slice">&rarr;</button>
+        <button class="btn" id="maskbtn" aria-pressed="true">Aorta mask</button>
+      </div>
+      <p class="readout" id="readout"></p>
+    </div>
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--ink-3)"></span><span><b>One slider drives all three.</b> The side views follow the aorta as you scroll, always cutting through it, and the dashed line marks the level the axial pane is showing.</span></div>
+      <div class="item"><span class="swatch" style="background:#2E68C8"></span><span><b>Supplied parent mask.</b> The daughters are in the image but never in this mask.</span></div>
+      <div class="item"><span class="swatch" style="background:var(--origin)"></span><span><b>Ostium centre</b>, the reported opening. Circle radius is the measured lumen radius.</span></div>
+      <div class="item"><span class="swatch" style="background:#FFFFFF;outline:1px solid var(--rule-2)"></span><span><b>Seed</b>, five millimetres along the daughter, drawn as a filled square with the direction arrow running through it.</span></div>
+      <p style="margin:4px 0 0;font-size:12.5px;color:var(--ink-3)">The seed usually sits on a different slice from the opening, so it fades separately. Both markers dim as you scrub away from the level they belong to.</p>
+    </div>
+  </div>
+  <h3 class="sub">What each measurement rests on</h3>
+  <div class="notes">
+    <div class="note"><h3>Seed</h3><p>Taken five millimetres along the traced path, not five millimetres along a straight line, so it stays inside a vessel that curves as it leaves.</p></div>
+    <div class="note"><h3>Direction</h3><p>A line fit over the proximal path rather than a two-point difference, so a single noisy voxel at the opening cannot swing it, across a window of three times the vessel's own radius.</p></div>
+    <div class="note"><h3>Radius</h3><p>Measured on a half-maximum contour in the plane cut across the vessel at the seed. That keeps it sub-voxel on 1.5 mm scans instead of stepping in half-voxel jumps.</p></div>
+    <div class="note"><h3>Why three planes</h3><p>In the axial view a daughter is a bright dot present for a slice or two. Cut along the body instead, projected through a six millimetre slab, and the same vessel is a spur running away from the aorta over a centimetre. A dot can be noise; a spur of that length cannot.</p></div>
+  </div>
+</section>
+
+<section id="method">
+  <div class="shead"><h2>How the method was built</h2><span class="lbl">first principles, checked against prior work</span></div>
+  <p class="lede">The pipeline was built from first principles and then checked against prior work on the same problem, which turned up two things it had wrong and one that did not survive contact with this data.</p>
+  <div class="grid2">
+    <figure>
+      <svg id="centrechart" class="chartsvg" role="img" aria-label="Share of footprint centroids that fall outside their own contact patch"></svg>
+      <figcaption class="note">Measured over 467 contact patches across a dozen cases.</figcaption>
+    </figure>
+    <div class="notes" style="margin-top:0">
+      <div class="note"><h3>The opening's centre is not its centroid</h3><p>Tahoces takes the contact point as the voxel furthest from the edge of the contact area. An opening cut obliquely through the wall is often crescent shaped, and the centroid of a crescent sits on its rim or off it entirely: it did so on 26.8% of patches here, usually landing inside the aortic lumen. The rim-distance maximum is inside the patch every time, and moves the reported point by a median of 1.5 mm.</p></div>
+      <div class="note"><h3>The direction window should scale</h3><p>Riffaud fits the direction a branch leaves at over three times its own radius. A lumbar artery a millimetre across and a renal four times that were sharing a flat 6 mm window here. The radius is now measured on a provisional fit and the direction fitted again at the right scale.</p></div>
+      <div class="note"><h3>One that did not work</h3><p>Danilov cleans vessel masks by walking distance layers inward from the farthest one, dropping voxels with no neighbour further out. Ported directly it anchors on each label's farthest point, which on this data is frequently a leak rather than the vessel, so it kept the leak and deleted the branch. It cost subject 2 both its coeliac and mesenteric arteries before being reverted.</p></div>
+      <div class="note"><h3>Stopping</h3><p>The walk halts at the first bifurcation. A vessel arising from another daughter is not a direct aortic daughter, so the trace has no business following it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="compute">
+  <div class="shead"><h2>Compute efficiency</h2><span class="lbl">runtime and peak memory</span></div>
+  <p class="lede">The brief allows sixty seconds a case on four cores and eight gigabytes, with no GPU and no network. This runs single-threaded on one core, so there are three cores of headroom left unused.</p>
+  <div class="grid2">
+    <figure>
+      <svg id="timechart" class="chartsvg" role="img" aria-label="Runtime per case against the length of aorta supplied"></svg>
+      <figcaption class="note" id="timecap"></figcaption>
+    </figure>
+    <div>
+      <p class="lede" style="margin-top:0" id="computeprose"></p>
+      <div class="notes">
+        <div class="note"><h3>What it costs</h3><p>Everything runs inside a box drawn around the supplied mask with a 31 mm margin, so cost tracks the length of aorta given rather than the size of the file. A 490 mm segment costs more than a 60 mm one from the same scanner.</p></div>
+        <div class="note"><h3>Where it goes</h3><p>Distance transforms and the outward label propagation dominate. Both are ordinary array work, which is why peak memory stays close to the volume itself.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="repro">
+  <div class="shead"><h2>Reproducibility</h2><span class="lbl">setup, run, output</span></div>
+  <p class="lede">One setup command, one run command, no per-case edits anywhere. The loader sniffs each file rather than trusting its extension, because part of the development set ships gzip-compressed under a plain <code>.nii</code> name; a reader that trusts the name fails on ten of the twenty-five.</p>
+  <pre>pip install -r requirements.txt
+
+python run.py --image image.nii.gz --aorta-mask aorta_mask.nii.gz --output prediction.json</pre>
+  <pre id="schema"></pre>
+  <div class="notes">
+    <div class="note"><h3>Coordinates</h3><p>Every point is checked against <code>SimpleITK.TransformIndexToPhysicalPoint</code> and agrees to six decimal places. Getting this backwards puts every point in the wrong place while still looking plausible, so it is verified rather than assumed.</p></div>
+    <div class="note"><h3>Failure behaviour</h3><p>A case that throws writes a valid file with an empty daughters list rather than taking the batch down with it. No prediction is ever a guess about a vessel that is not visible.</p></div>
+    <div class="note"><h3>One known data fault</h3><p>Subject 24 has direction cosines that are not orthonormal, so SimpleITK refuses to open it at all. The loader here reads it. Worth knowing if the reference pipeline uses SimpleITK to read.</p></div>
+    <div class="note"><h3>Determinism</h3><p>No randomness anywhere, no learned weights, no network. The same input gives the same output on any machine with the listed dependencies.</p></div>
+  </div>
+</section>
+
+<section id="extra">
+  <div class="shead"><h2>Beyond the rubric</h2><span class="lbl">not scored</span></div>
+  <p class="lede">Two things the flattened representation gives away for free once every case is in the same frame. Neither is graded; both are why the representation is worth having.</p>
+  <div class="grid2">
+    <figure>
+      <svg id="rose" class="chartsvg" viewBox="0 0 340 350" role="img" aria-label="Polar histogram of daughter clock positions across all cases"></svg>
+      <figcaption class="note" id="rosecap"></figcaption>
+    </figure>
+    <figure>
+      <div class="keyrow">
+        <span><svg width="14" height="9"><rect width="14" height="9" fill="var(--zone)"></rect></svg>longest branch-free stretch</span>
+        <span><svg width="14" height="9"><rect width="14" height="9" fill="var(--origin)" opacity=".2"></rect></svg>rest of the supplied segment</span>
+      </div>
+      <svg id="zonechart" class="chartsvg" role="img" aria-label="Longest branch-free stretch of aorta in each case"></svg>
+      <figcaption class="note">A stent graft has to seal against wall with nothing leaving it. The useful number for sizing one is not how many daughters there are but the longest clear run and the narrowest diameter along it, which falls straight out of the same detections.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<footer>
+  <p>Every figure on this page is generated from the prediction files, one per case, written by the command above. Nothing is drawn by hand and no case is treated specially.</p>
+</footer>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+"use strict";
+const A = window.ATLAS, cases = A.cases;
+const MAPH = 600;
+const css = getComputedStyle(document.documentElement);
+const tok = n => css.getPropertyValue(n).trim();
+document.documentElement.style.setProperty('--maph', MAPH + 'px');
+
+const el = (tag, attrs) => {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in (attrs||{})) n.setAttribute(k, attrs[k]);
+  return n;
+};
+const txt = (x,y,s,o) => {
+  const t = el("text", Object.assign({x:x, y:y, "font-family":tok("--sans"),
+    "font-size":10.5, fill:tok("--ink-3")}, o||{}));
+  t.textContent = s; return t;
+};
+const clockToFrac = d => ((((d + 180) % 360) + 360) % 360) / 360;
+const clockLabel = d => {
+  const h = ((d/30) + 12) % 12;
+  const hh = Math.floor(h) === 0 ? 12 : Math.floor(h);
+  return hh + ":" + String(Math.round((h - Math.floor(h)) * 60)).padStart(2,"0");
+};
+const median = a => a.length % 2 ? a[(a.length-1)/2] : (a[a.length/2-1]+a[a.length/2])/2;
+const bestZone = c => c.landing_zones.reduce((m,z)=> z.length_mm > (m?m.length_mm:-1) ? z : m, null);
+
+cases.forEach(c => {
+  c.density = c.aorta_length_mm ? c.daughters.length * 100 / c.aorta_length_mm : 0;
+  c.rejectedn = c.rejected.reduce((s,r)=>s+r.count, 0);
+});
+const allBranches = [];
+cases.forEach(c => c.daughters.forEach(b => allBranches.push(Object.assign({case_id:c.case_id}, b))));
+const times = cases.map(c => c.seconds).slice().sort((a,b)=>a-b);
+const flagged = cases.filter(c => c.contrast_ok === false);
+
+document.getElementById("ncases").textContent = cases.length + " CT angiograms";
+
+/* ---------------- scorecard ---------------- */
+(function(){
+  const worst = Math.max(...times);
+  const rejTotal = cases.reduce((s,c)=>s+c.rejectedn, 0);
+  const rows = [
+    ["Branch discovery", `${allBranches.length} daughters returned, ${rejTotal} candidates refused`, "#discovery"],
+    ["Ostium localisation", "physical millimetres, verified against SimpleITK", "#ostium"],
+    ["Instance quality", "seed, direction and radius from one traced path", "#quality"],
+    ["Compute efficiency", `${median(times).toFixed(0)} s median, ${worst.toFixed(0)} s worst, one core`, "#compute"],
+    ["Reproducibility", "two commands, no per-case edits", "#repro"],
+  ];
+  document.getElementById("scorecard").innerHTML = rows.map(([t,d,h]) =>
+    `<div class="card"><a href="${h}"><div class="t">${t}</div><div class="d">${d}</div></a></div>`).join("");
+})();
+
+/* ---------------- the unroll ---------------- */
+(function(){
+  const canvas = document.getElementById("unrollcanvas");
+  const ctx = canvas.getContext("2d");
+  const label = document.getElementById("unrolllabel");
+  const btn = document.getElementById("unrollbtn");
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const demoCase = cases.reduce((m,c) => (c.contrast_ok !== false && c.aorta_length_mm < 220
+    && c.daughters.length > (m ? m.daughters.length : -1)) ? c : m, null) || cases[0];
+  const img = new Image();
+  const W = canvas.width, H = canvas.height, PAD = 26, COLS = 180;
+
+  function draw(t){
+    ctx.fillStyle = tok("--paper"); ctx.fillRect(0,0,W,H);
+    if (!img.complete || !img.naturalWidth) return;
+    const ih = img.naturalHeight, iw = img.naturalWidth;
+    const dh = H - PAD*2, flatHalf = (W - PAD*2)/2, tubeHalf = flatHalf*0.40, colW = iw/COLS;
+    for (let j = 0; j < COLS; j++){
+      const a0 = (-180 + j*360/COLS)*Math.PI/180, a1 = (-180 + (j+1)*360/COLS)*Math.PI/180;
+      const px = a => W/2 + ((a/Math.PI)*flatHalf)*t + (Math.sin(a)*tubeHalf)*(1-t);
+      const x0 = px(a0), x1 = px(a1), facing = Math.cos((a0+a1)/2);
+      const alpha = t + (1-t)*Math.max(0, facing)**0.55;
+      if (alpha <= 0.012) continue;
+      ctx.globalAlpha = Math.min(1, alpha);
+      ctx.drawImage(img, j*colW, 0, colW, ih,
+        Math.min(x0,x1), PAD, Math.max(Math.abs(x1-x0),1)+0.7, dh);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "rgba(0,0,0,.30)"; ctx.lineWidth = 1; ctx.setLineDash([4,5]);
+    ctx.beginPath(); ctx.moveTo(W/2, PAD); ctx.lineTo(W/2, H-PAD); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = tok("--ink-3"); ctx.font = "500 11px " + tok("--sans");
+    ctx.textAlign = "center"; ctx.fillText("12 o'clock", W/2, PAD-9);
+    if (t > 0.55){
+      ctx.globalAlpha = (t-0.55)/0.45;
+      ctx.textAlign = "left";  ctx.fillText("6", PAD, H-PAD+15);
+      ctx.textAlign = "right"; ctx.fillText("6", W-PAD, H-PAD+15);
+      ctx.globalAlpha = 1;
+    }
+    ctx.textAlign = "left";
+    label.textContent = t < 0.08 ? "the wall as a tube"
+      : t > 0.92 ? "the same wall, flattened" : "opening it out";
+  }
+  let raf = null;
+  function play(){
+    if (reduce){ draw(1); return; }
+    cancelAnimationFrame(raf);
+    const start = performance.now(), dur = 2100;
+    const step = now => {
+      const k = Math.min(1, (now-start)/dur);
+      draw(k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k+2,3)/2);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  img.onload = () => { draw(1); if (!reduce) setTimeout(play, 700); };
+  img.src = "unwrap_" + demoCase.case_id + ".png";
+  btn.addEventListener("click", play);
+})();
+
+/* ---------------- case table ---------------- */
+const table = document.getElementById("casetable");
+let sortKey = "case_id", sortDir = 1;
+function fmt(c, k){
+  switch(k){
+    case "case_id": return c.case_id.replace("subject","");
+    case "daughters": return c.daughters.length;
+    case "aorta_length_mm": return c.aorta_length_mm.toFixed(0) + " mm";
+    case "density": return c.density.toFixed(1);
+    case "lumen_hu": return c.lumen_hu + " HU";
+    case "opacification_hu": return c.opacification_hu + " HU";
+    case "mean_diameter_mm": return c.mean_diameter_mm.toFixed(1) + " mm";
+    case "rejectedn": return c.rejectedn;
+    case "seconds": return c.seconds.toFixed(1) + " s";
+  }
+}
+function val(c, k){ return k === "case_id" ? c.case_id : (k === "daughters" ? c.daughters.length : c[k]); }
+function renderTable(){
+  const body = table.tBodies[0];
+  const rows = cases.slice().sort((a,b) => {
+    const x = val(a,sortKey), y = val(b,sortKey);
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * sortDir;
+  });
+  body.innerHTML = rows.map(c => {
+    const cols = ["case_id","daughters","aorta_length_mm","density","lumen_hu",
+                  "opacification_hu","mean_diameter_mm","rejectedn","seconds"];
+    return `<tr class="pickable${c.contrast_ok === false ? " flagged" : ""}" data-case="${c.case_id}">`
+      + cols.map((k,i) => `<td class="${i?"n":""}">${fmt(c,k)}</td>`).join("") + `</tr>`;
+  }).join("");
+  body.querySelectorAll("tr").forEach(tr => tr.addEventListener("click",
+    () => selectCase(cases.findIndex(c => c.case_id === tr.dataset.case), true)));
+}
+(function(){
+  table.querySelectorAll("th").forEach(th => {
+    const k = th.dataset.k, lab = th.textContent;
+    th.innerHTML = `<button type="button">${lab}<span class="arrow">&#9650;</span></button>`;
+    th.querySelector("button").addEventListener("click", () => {
+      sortDir = (sortKey === k) ? -sortDir : (k === "case_id" ? 1 : -1);
+      sortKey = k;
+      table.querySelectorAll("th").forEach(o => o.removeAttribute("aria-sort"));
+      th.setAttribute("aria-sort", sortDir > 0 ? "ascending" : "descending");
+      th.querySelector(".arrow").innerHTML = sortDir > 0 ? "&#9650;" : "&#9660;";
+      renderTable();
+    });
+  });
+  const tot = allBranches.length, totRej = cases.reduce((s,c)=>s+c.rejectedn,0);
+  const totLen = cases.reduce((s,c)=>s+c.aorta_length_mm,0);
+  table.tFoot.innerHTML = `<tr><td>25 cases</td><td class="n">${tot}</td>`
+    + `<td class="n">${totLen.toFixed(0)} mm</td><td class="n">${(tot*100/totLen).toFixed(1)}</td>`
+    + `<td class="n"></td><td class="n"></td><td class="n"></td>`
+    + `<td class="n">${totRej}</td><td class="n">${cases.reduce((s,c)=>s+c.seconds,0).toFixed(0)} s</td></tr>`;
+  renderTable();
+})();
+
+/* ---------------- contrast margin chart ---------------- */
+(function(){
+  const svg = document.getElementById("marginchart");
+  const rowH = 17, L = 34, R = 46, T = 22, W = 430;
+  const H = T + cases.length*rowH + 22;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const vals = cases.map(c=>c.opacification_hu);
+  const lo = 0, hi = Math.max(...vals);
+  const x = v => L + ((v - lo)/(hi - lo))*(W-L-R);
+  const zero = x(0), gate = x(150);
+
+  svg.appendChild(el("rect",{x:L,y:T-6,width:gate-L,height:cases.length*rowH+6,
+    fill:tok("--flag-soft")}));
+  svg.appendChild(el("line",{x1:gate,y1:T-10,x2:gate,y2:H-20,stroke:tok("--flag"),
+    "stroke-width":1,"stroke-dasharray":"3 3"}));
+  svg.appendChild(txt(gate+4, T-13, "contrast floor, 150 HU", {"font-size":9.5,fill:tok("--flag")}));
+  svg.appendChild(el("line",{x1:zero,y1:T-6,x2:zero,y2:H-20,stroke:tok("--rule-2"),"stroke-width":1}));
+
+  cases.slice().sort((a,b)=>a.opacification_hu-b.opacification_hu).forEach((c,i) => {
+    const yy = T + i*rowH, bad = c.contrast_ok === false;
+    const x0 = zero, x1 = Math.max(x(c.opacification_hu), zero+1);
+    svg.appendChild(el("rect",{x:x0,y:yy+3,width:Math.max(x1-x0,1),height:9,
+      fill: bad ? tok("--flag") : tok("--ink"), "fill-opacity": bad ? 1 : .68}));
+    svg.appendChild(txt(L-5, yy+11, c.case_id.replace("subject",""),
+      {"text-anchor":"end","font-size":9.5, fill: bad ? tok("--flag") : tok("--ink-3"),
+       "font-weight": bad ? 700 : 400}));
+    svg.appendChild(txt(x1+4, yy+11, c.opacification_hu,
+      {"font-size":9.5, fill: bad ? tok("--flag") : tok("--ink-3")}));
+  });
+  svg.appendChild(txt(L, H-5, "lower quartile of the aortic lumen, HU", {"font-size":10}));
+})();
+
+/* ---------------- rejection ledger ---------------- */
+(function(){
+  const svg = document.getElementById("rejectchart");
+  const tally = {};
+  cases.forEach(c => c.rejected.forEach(r => { tally[r.reason] = (tally[r.reason]||0) + r.count; }));
+  const rows = Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+  const accepted = allBranches.length;
+  rows.push(["accepted as a daughter instance", accepted]);
+  const rowH = 30, L = 8, R = 8, T = 14, W = 560;
+  const H = T + rows.length*rowH + 10;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const max = Math.max(...rows.map(r=>r[1]));
+  rows.forEach(([reason,n],i) => {
+    const yy = T + i*rowH, ok = reason.startsWith("accepted");
+    svg.appendChild(el("rect",{x:L,y:yy+12,width:Math.max((n/max)*(W-L-R),1),height:10,
+      fill: ok ? tok("--origin") : tok("--ink"), "fill-opacity": ok ? .85 : .18}));
+    svg.appendChild(txt(L, yy+8, reason.charAt(0).toUpperCase() + reason.slice(1),
+      {"font-size":11.5, fill: ok ? tok("--origin") : tok("--ink-2"),
+       "font-weight": ok ? 700 : 400}));
+    svg.appendChild(txt(L + Math.max((n/max)*(W-L-R),1) + 6, yy+21, n,
+      {"font-size":10.5, fill:tok("--ink-3")}));
+  });
+})();
+
+/* ---------------- case picker & stage ---------------- */
+let current = 0, selected = -1;
+const picker = document.getElementById("picker");
+const img = document.getElementById("unwrapimg");
+const pins = document.getElementById("pins");
+const blist = document.getElementById("blist");
+const ruler = document.getElementById("ruler");
+const flagslot = document.getElementById("flagslot");
+
+cases.forEach((c,i) => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.type = "button";
+  b.setAttribute("aria-pressed", i===0 ? "true" : "false");
+  b.innerHTML = `<b>${c.case_id.replace("subject","")}</b><i>${c.daughters.length}</i>`
+    + (c.contrast_ok === false ? "<u>!</u>" : "");
+  b.title = c.case_id + " \u2014 " + c.daughters.length + " daughters"
+    + (c.contrast_ok === false ? ", low contrast" : "");
+  b.addEventListener("click", () => selectCase(i));
+  picker.appendChild(b);
+});
+
+const arcFrac = (c,s) => c.unwrap.arc_max > c.unwrap.arc_min
+  ? (s - c.unwrap.arc_min)/(c.unwrap.arc_max - c.unwrap.arc_min) : 0;
+
+function drawRuler(c){
+  const W = 88, H = MAPH, cx = 40;
+  ruler.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  ruler.setAttribute("height", H);
+  ruler.replaceChildren();
+  const maxD = Math.max(...c.profile.map(p=>p.d), 12), scale = 32/maxD;
+  const fwd = c.profile.map(p => [cx - p.d/2*scale, arcFrac(c,p.s)*H]);
+  const back = c.profile.map(p => [cx + p.d/2*scale, arcFrac(c,p.s)*H]).reverse();
+  ruler.appendChild(el("path",{d:"M"+fwd.concat(back).map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join("L")+"Z",
+    fill:tok("--fill-2"), stroke:tok("--rule-2"), "stroke-width":1}));
+  c.landing_zones.forEach(z => {
+    const y0 = arcFrac(c,z.start_mm)*H, y1 = arcFrac(c,z.end_mm)*H;
+    ruler.appendChild(el("rect",{x:cx+21,y:y0,width:3,height:Math.max(y1-y0,1),fill:tok("--zone")}));
+    if (y1-y0 > 30) ruler.appendChild(txt(cx+28,(y0+y1)/2+3, z.length_mm.toFixed(0),
+      {fill:tok("--zone"),"font-size":9.5,"font-weight":600}));
+  });
+  for (let s = Math.ceil(c.unwrap.arc_min/20)*20; s <= c.unwrap.arc_max; s += 20){
+    const y = arcFrac(c,s)*H;
+    ruler.appendChild(el("line",{x1:0,y1:y,x2:5,y2:y,stroke:tok("--rule-2"),"stroke-width":1}));
+    ruler.appendChild(txt(0,y-4,s.toFixed(0),{"font-size":9}));
+  }
+  ruler.appendChild(txt(0,H-1,"mm",{"font-size":9}));
+}
+
+function drawPins(c){
+  pins.querySelectorAll(".pin").forEach(n => n.remove());
+  c.daughters.forEach((b,i) => {
+    const p = document.createElement("div");
+    p.className = "pin"; p.dataset.i = i;
+    p.style.left = (clockToFrac(b.clock_deg)*100).toFixed(2) + "%";
+    p.style.top = (arcFrac(c,b.arc_mm)*100).toFixed(2) + "%";
+    p.innerHTML = "<b>" + (i+1) + "</b>";
+    p.addEventListener("mouseenter", () => highlight(i));
+    p.addEventListener("mouseleave", () => highlight(selected));
+    p.addEventListener("click", () => selectBranch(i, true));
+    pins.appendChild(p);
+  });
+}
+
+function drawList(c){
+  blist.replaceChildren();
+  if (!c.daughters.length){
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Nothing cleared the bar in this segment. "
+      + (c.rejected.length ? "Candidates refused: " + c.rejected.map(r=>r.count+" "+r.reason).join("; ") + "." : "");
+    blist.appendChild(p); return;
+  }
+  c.daughters.forEach((b,i) => {
+    const btn = document.createElement("button");
+    btn.className = "bcard"; btn.type = "button"; btn.dataset.i = i;
+    btn.innerHTML =
+      `<div class="row1"><span class="clock">${clockLabel(b.clock_deg)}</span><span class="id">${b.id}</span></div>
+       <div class="row2"><span>${b.arc_mm.toFixed(0)} mm down</span><span>r ${b.radius_mm.toFixed(2)} mm</span></div>
+       <div class="row2"><span>traced ${b.traced_mm.toFixed(1)} mm</span><span>${Math.round(b.hu)} HU</span>${
+         b.bifurcation_mm ? `<span>splits at ${b.bifurcation_mm.toFixed(1)}</span>` : ""}</div>`;
+    btn.addEventListener("click", () => selectBranch(i, true));
+    btn.addEventListener("mouseenter", () => highlight(i));
+    btn.addEventListener("mouseleave", () => highlight(selected));
+    blist.appendChild(btn);
+  });
+}
+
+function highlight(i){
+  pins.classList.toggle("dim", i >= 0);
+  pins.querySelectorAll(".pin").forEach(p => p.classList.toggle("on", Number(p.dataset.i) === i));
+  blist.querySelectorAll(".bcard").forEach(b => b.classList.toggle("on", Number(b.dataset.i) === i));
+}
+
+function selectBranch(i, jump){
+  selected = i; highlight(i);
+  if (!jump) return;
+  const c = cases[current], b = c.daughters[i], zs = c.slices.z_mm;
+  let best = 0, bd = Infinity;
+  zs.forEach((z,k) => { const d = Math.abs(z - b.slice_z); if (d < bd){ bd = d; best = k; } });
+  slider.value = best; drawSlice();
+}
+
+function selectCase(i, scroll){
+  if (i < 0) return;
+  current = i; selected = -1;
+  const c = cases[i];
+  picker.querySelectorAll(".chip").forEach((b,k) => b.setAttribute("aria-pressed", k===i ? "true":"false"));
+  document.querySelectorAll("#strips .strip").forEach((s,k) => s.classList.toggle("sel", k===i));
+  img.src = "unwrap_" + c.case_id + ".png";
+  img.alt = "Flattened map of the aortic wall for " + c.case_id;
+  flagslot.innerHTML = c.contrast_ok === false
+    ? `<div class="flagbox"><b>${c.case_id} is not an angiogram.</b> The lower quartile of this aortic lumen
+       is ${c.opacification_hu} HU, against 194 HU or more on every opacified case in the set. Unopacified blood
+       looks like muscle, so a daughter cannot be separated from it by brightness. The bar is raised accordingly
+       and ${c.daughters.length === 0 ? "nothing" : "only " + c.daughters.length} clears it.</div>`
+    : "";
+  drawRuler(c); drawPins(c); drawList(c); loadSprites(c);
+  if (scroll) document.getElementById("ostium").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+/* ---------------- linked axial / coronal / sagittal viewer ---------------- */
+const canvas = document.getElementById("ctcanvas");
+const ctx = canvas.getContext("2d");
+const corCanvas = document.getElementById("corcanvas");
+const sagCanvas = document.getElementById("sagcanvas");
+const slider = document.getElementById("slider");
+const readout = document.getElementById("readout");
+const maskbtn = document.getElementById("maskbtn");
+let showMask = true, spriteCase = null;
+const img4 = {};   // ct, mask, cor, cormask, sag, sagmask
+
+function loadSprites(c){
+  spriteCase = c.case_id;
+  slider.max = c.slices.count - 1;
+  slider.value = Math.floor(c.slices.count/2);
+  const want = {ct:"ct_", mask:"mask_", cor:"cor_", cormask:"cormask_",
+                sag:"sag_", sagmask:"sagmask_"};
+  for (const k in want){
+    const im = new Image();
+    im.onload = drawSlice;
+    im.src = want[k] + c.case_id + (k.includes("mask") ? ".png" : ".jpg");
+    img4[k] = im;
+  }
+  drawSlice();
+}
+
+const ready = im => im && im.complete && im.naturalWidth > 0;
+
+function paintAxial(c, k){
+  const s = c.slices, tile = s.tile_px, W = canvas.width;
+  const sx = (k % s.cols)*tile, sy = Math.floor(k/s.cols)*tile;
+  ctx.fillStyle = tok("--film"); ctx.fillRect(0,0,W,W);
+  if (ready(img4.ct)) ctx.drawImage(img4.ct, sx, sy, tile, tile, 0, 0, W, W);
+  if (showMask && ready(img4.mask)) ctx.drawImage(img4.mask, sx, sy, tile, tile, 0, 0, W, W);
+
+  const scale = W/tile, pitch = s.pitch_mm;
+  const toPx = (left, ant) => [
+    ((left - s.centre_left[k])/pitch + (tile-1)/2) * scale,
+    ((tile-1) - ((ant - s.centre_anterior[k])/pitch + (tile-1)/2)) * scale
+  ];
+  let nearOst = 0, nearSeed = 0;
+  c.daughters.forEach((b,i) => {
+    const dim = (selected < 0 || selected === i) ? 1 : .38;
+    const fs = Math.max(0, 1 - Math.abs((b.seed_z ?? b.slice_z) - s.z_mm[k])/9);
+    if (fs > 0.02){
+      nearSeed++;
+      const [px,py] = toPx(b.seed_left ?? b.slice_left, b.seed_anterior ?? b.slice_anterior);
+      ctx.globalAlpha = fs*dim;
+      drawArrow(ctx, px, py, b.dir_left, -b.dir_anterior, 32);
+      drawSeed(ctx, px, py);
+      ctx.globalAlpha = 1;
+    }
+    const fo = Math.max(0, 1 - Math.abs(b.slice_z - s.z_mm[k])/9);
+    if (fo > 0.02){
+      nearOst++;
+      const [px,py] = toPx(b.slice_left, b.slice_anterior);
+      ctx.globalAlpha = fo*dim;
+      drawOstium(ctx, px, py, Math.max(b.radius_mm/pitch*scale, 7), selected === i, i+1);
+      ctx.globalAlpha = 1;
+    }
+  });
+  return [nearOst, nearSeed];
+}
+
+function paintSide(cv, c, kind, k){
+  const meta = c.side && c.side[kind];
+  const g = cv.getContext("2d");
+  g.fillStyle = tok("--film"); g.fillRect(0,0,cv.width,cv.height);
+  if (!meta) return;
+  if (cv.width !== meta.tile_w || cv.height !== meta.tile_h){
+    cv.width = meta.tile_w; cv.height = meta.tile_h;
+    g.fillStyle = tok("--film"); g.fillRect(0,0,cv.width,cv.height);
+  }
+  // the slab that actually contains the aorta at this level
+  const along = kind === "coronal" ? c.slices.centre_anterior[k] : c.slices.centre_left[k];
+  let idx = 0, best = Infinity;
+  meta.offsets.forEach((o,i) => { const d = Math.abs(o - along); if (d < best){ best = d; idx = i; } });
+  const sx = (idx % meta.cols)*meta.tile_w, sy = Math.floor(idx/meta.cols)*meta.tile_h;
+  const ct_ = kind === "coronal" ? img4.cor : img4.sag;
+  const mk_ = kind === "coronal" ? img4.cormask : img4.sagmask;
+  if (ready(ct_)) g.drawImage(ct_, sx, sy, meta.tile_w, meta.tile_h, 0, 0, cv.width, cv.height);
+  if (showMask && ready(mk_)) g.drawImage(mk_, sx, sy, meta.tile_w, meta.tile_h, 0, 0, cv.width, cv.height);
+
+  const pitch = meta.pitch_mm;
+  const xOf = v => (v - meta.in_plane)/pitch + cv.width/2 - 0.5;
+  const yOf = z => (meta.z_top - z)/pitch - 0.5;
+
+  // the level the axial pane is showing
+  const yLevel = yOf(c.slices.z_mm[k]);
+  g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 1; g.setLineDash([5,4]);
+  g.beginPath(); g.moveTo(0, yLevel); g.lineTo(cv.width, yLevel); g.stroke();
+  g.setLineDash([]);
+
+  c.daughters.forEach((b,i) => {
+    const across = kind === "coronal" ? b.slice_anterior : b.slice_left;
+    const fade = Math.max(0, 1 - Math.abs(across - meta.offsets[idx])/8);
+    if (fade <= 0.02) return;
+    const dim = (selected < 0 || selected === i) ? 1 : .35;
+    g.globalAlpha = fade*dim;
+    const px = xOf(kind === "coronal" ? b.slice_left : b.slice_anterior);
+    const py = yOf(b.slice_z);
+    const dx = kind === "coronal" ? b.dir_left : b.dir_anterior;
+    drawArrow(g, px, py, dx, -b.dir_superior, 26);
+    drawOstium(g, px, py, Math.max(b.radius_mm/pitch, 6), selected === i, i+1);
+    g.globalAlpha = 1;
+  });
+}
+
+function drawArrow(g, px, py, dx, dy, len){
+  const L = Math.hypot(dx, dy);
+  if (!(L > 0.08)) return;
+  const ax = dx/L*len, ay = dy/L*len;
+  g.strokeStyle = "#FFFFFF"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(px - ax*0.25, py - ay*0.25); g.lineTo(px + ax, py + ay); g.stroke();
+  g.beginPath();
+  g.moveTo(px+ax, py+ay);
+  g.lineTo(px+ax-ay*0.24-ax*0.24, py+ay+ax*0.24-ay*0.24);
+  g.lineTo(px+ax+ay*0.24-ax*0.24, py+ay-ax*0.24-ay*0.24);
+  g.closePath(); g.fillStyle = "#FFFFFF"; g.fill();
+}
+function drawSeed(g, px, py){
+  g.fillStyle = "#FFFFFF"; g.fillRect(px-4, py-4, 8, 8);
+  g.strokeStyle = "rgba(0,0,0,.7)"; g.lineWidth = 1; g.strokeRect(px-4.5, py-4.5, 9, 9);
+}
+function drawOstium(g, px, py, r, on, n){
+  g.strokeStyle = tok("--origin"); g.lineWidth = on ? 3.5 : 2.2;
+  g.beginPath(); g.arc(px, py, r, 0, Math.PI*2); g.stroke();
+  g.fillStyle = tok("--origin"); g.font = "600 13px " + tok("--sans");
+  g.fillText(String(n), px + r + 3, py - 6);
+}
+
+function drawSlice(){
+  const c = cases[current];
+  if (!c || spriteCase !== c.case_id) return;
+  const s = c.slices, k = Math.min(Number(slider.value), s.count-1);
+  const [nearOst, nearSeed] = paintAxial(c, k);
+  paintSide(corCanvas, c, "coronal", k);
+  paintSide(sagCanvas, c, "sagittal", k);
+  readout.textContent = `${c.case_id} \u00b7 slice ${k+1} of ${s.count} \u00b7 ${s.fov_mm.toFixed(0)} mm axial field`
+    + ` \u00b7 ${nearOst} opening${nearOst===1?"":"s"} and ${nearSeed} seed${nearSeed===1?"":"s"} near this level`
+    + (c.side ? ` \u00b7 side views projected through a 6 mm slab` : "");
+}
+
+slider.addEventListener("input", drawSlice);
+document.getElementById("prev").addEventListener("click", () => { slider.value = Math.max(0, Number(slider.value)-1); drawSlice(); });
+document.getElementById("next").addEventListener("click", () => { slider.value = Math.min(Number(slider.max), Number(slider.value)+1); drawSlice(); });
+maskbtn.addEventListener("click", () => { showMask = !showMask; maskbtn.setAttribute("aria-pressed", String(showMask)); drawSlice(); });
+
+/* ---------------- evidence contact sheet ---------------- */
+(function(){
+  const host = document.getElementById("evidstrip");
+  if (!host) return;
+  cases.forEach((c,ci) => {
+    if (!c.evidence || !c.daughters.length) return;
+    const e = c.evidence;
+    const box = document.createElement("div");
+    box.className = "evidcase";
+    const hd = document.createElement("div");
+    hd.className = "hd";
+    hd.textContent = c.case_id.replace("subject","") + " \u00b7 " + c.daughters.length;
+    const row = document.createElement("div");
+    row.className = "evidrow";
+    c.daughters.forEach((b,i) => {
+      const t = document.createElement("button");
+      t.className = "evid"; t.type = "button";
+      t.title = `${c.case_id} ${b.id} \u00b7 ${clockLabel(b.clock_deg)} \u00b7 r ${b.radius_mm.toFixed(2)} mm`;
+      const col = i % e.cols, r = Math.floor(i / e.cols);
+      t.style.backgroundImage = `url(evid_${c.case_id}.jpg)`;
+      t.style.backgroundPosition = `${-col*e.tile_px}px ${-r*e.tile_px}px`;
+      const cx = e.tile_px/2, off = e.centre_offset_mm / e.pitch_mm;
+      const ox = cx - off, sx = cx + (5.0 - e.centre_offset_mm)/e.pitch_mm;
+      t.innerHTML = `<span class="lab">${i+1}</span>`
+        + `<span class="os" style="left:${ox.toFixed(1)}px;top:${cx}px"></span>`
+        + `<span class="sd" style="left:${sx.toFixed(1)}px;top:${cx}px"></span>`;
+      t.addEventListener("click", () => { selectCase(ci, true); setTimeout(()=>selectBranch(i,true), 350); });
+      row.appendChild(t);
+    });
+    box.appendChild(hd); box.appendChild(row); host.appendChild(box);
+  });
+})();
+
+/* ---------------- strips ---------------- */
+(function(){
+  const host = document.getElementById("strips");
+  const PXMM = 1.10;
+  const longest = Math.max(...cases.map(c=>c.aorta_length_mm));
+  const rail = document.createElement("div");
+  rail.className = "striprule";
+  rail.style.height = Math.round(longest*PXMM) + "px";
+  rail.style.marginTop = "20px";
+  for (let mm = 0; mm <= longest; mm += 50){
+    const s = document.createElement("span");
+    s.style.top = (mm*PXMM) + "px"; s.textContent = mm;
+    rail.appendChild(s);
+  }
+  host.appendChild(rail);
+  cases.forEach((c,i) => {
+    const h = Math.max(Math.round(c.aorta_length_mm*PXMM), 14);
+    const fig = document.createElement("button");
+    fig.className = "strip" + (i===0 ? " sel" : "") + (c.contrast_ok === false ? " flag" : "");
+    fig.type = "button";
+    fig.title = `${c.case_id} \u2014 ${c.aorta_length_mm.toFixed(0)} mm segment, ${c.daughters.length} daughters`
+      + (c.contrast_ok === false ? ", low contrast" : "");
+    const frame = document.createElement("span");
+    frame.className = "frame"; frame.style.display = "block"; frame.style.height = h + "px";
+    const im = document.createElement("img");
+    im.src = "unwrap_" + c.case_id + ".png"; im.alt = ""; im.style.height = h + "px";
+    frame.appendChild(im);
+    c.daughters.forEach(b => {
+      const d = document.createElement("span");
+      d.className = "o";
+      d.style.left = (clockToFrac(b.clock_deg)*100).toFixed(1) + "%";
+      d.style.top = (arcFrac(c,b.arc_mm)*100).toFixed(1) + "%";
+      frame.appendChild(d);
+    });
+    const cap = document.createElement("figcaption");
+    cap.textContent = c.case_id.replace("subject","");
+    fig.appendChild(cap); fig.appendChild(frame);
+    fig.addEventListener("click", () => selectCase(i, true));
+    host.appendChild(fig);
+  });
+})();
+
+/* ---------------- runtime chart ---------------- */
+(function(){
+  const svg = document.getElementById("timechart");
+  const L = 46, R = 16, T = 20, B = 42, W = 430, H = 300;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const maxLen = Math.max(...cases.map(c=>c.aorta_length_mm));
+  const maxT = Math.max(60, ...cases.map(c=>c.seconds));
+  const x = v => L + (v/maxLen)*(W-L-R);
+  const y = v => H-B - (v/maxT)*(H-T-B);
+
+  svg.appendChild(el("rect",{x:L,y:T,width:W-L-R,height:H-T-B,fill:tok("--fill"),
+    stroke:tok("--rule"),"stroke-width":1}));
+  svg.appendChild(el("rect",{x:L,y:y(60),width:W-L-R,height:H-B-y(60),fill:"#fff","fill-opacity":.55}));
+  svg.appendChild(el("line",{x1:L,y1:y(60),x2:W-R,y2:y(60),stroke:tok("--origin"),
+    "stroke-width":1.5,"stroke-dasharray":"5 4"}));
+  svg.appendChild(txt(W-R-4, y(60)-6, "60 s budget", {"text-anchor":"end","font-size":10,fill:tok("--origin")}));
+  for (let t=0; t<=maxT; t+=30){
+    svg.appendChild(txt(L-7, y(t)+4, String(t), {"text-anchor":"end","font-size":10}));
+  }
+  for (let v=0; v<=maxLen; v+=100){
+    svg.appendChild(txt(x(v), H-B+15, String(v), {"text-anchor":"middle","font-size":10}));
+  }
+  svg.appendChild(txt((L+W-R)/2, H-B+32, "millimetres of aorta supplied", {"text-anchor":"middle","font-size":10.5}));
+  svg.appendChild(txt(0, T-7, "seconds", {"font-size":10.5}));
+
+  cases.forEach(c => {
+    const over = c.seconds > 60;
+    const dot = el("circle",{cx:x(c.aorta_length_mm), cy:y(c.seconds), r:4.5,
+      fill: over ? tok("--origin") : tok("--ink"), "fill-opacity": over ? .9 : .55,
+      stroke:"#fff","stroke-width":1});
+    const ttl = el("title");
+    ttl.textContent = `${c.case_id}: ${c.aorta_length_mm.toFixed(0)} mm in ${c.seconds.toFixed(1)} s`;
+    dot.appendChild(ttl);
+    svg.appendChild(dot);
+    if (over) svg.appendChild(txt(x(c.aorta_length_mm)-8, y(c.seconds)+4,
+      c.case_id.replace("subject",""), {"text-anchor":"end","font-size":10,fill:tok("--origin")}));
+  });
+
+  const over = cases.filter(c=>c.seconds>60);
+  document.getElementById("timecap").textContent =
+    `Each dot is a case. Runtime rises with the length of aorta supplied, not with file size. `
+    + (over.length ? `${over.length === 1 ? "One case exceeds" : over.length + " cases exceed"} the sixty-second budget: `
+        + over.map(c=>`${c.case_id.replace("subject","")} at ${c.seconds.toFixed(0)} s on a ${c.aorta_length_mm.toFixed(0)} mm segment`).join(", ")
+        + ". Both carry far more aorta than the median case."
+      : "No case exceeds the sixty-second budget.");
+
+  const peaks = cases.map(c=>c.peak_rss_gb).filter(v => typeof v === "number");
+  document.getElementById("computeprose").textContent =
+    `Median ${median(times).toFixed(1)} s per case, slowest ${Math.max(...times).toFixed(1)} s, `
+    + `total ${(cases.reduce((s,c)=>s+c.seconds,0)/60).toFixed(1)} minutes for all twenty-five. `
+    + (peaks.length ? `Peak resident memory ${Math.max(...peaks).toFixed(1)} GB against an eight gigabyte allowance. ` : "")
+    + `Single-threaded, so three of the four allowed cores sit idle and there is obvious headroom if the budget ever binds.`;
+})();
+
+/* ---------------- centroid vs rim-max ---------------- */
+(function(){
+  const svg = document.getElementById("centrechart");
+  if (!svg) return;
+  const W = 400, H = 168, L = 112, R = 40, T = 26;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const rows = [["Patch centroid", 26.8, tok("--origin")],
+                ["Rim-distance maximum", 0.0, tok("--zone")]];
+  const x = v => L + (v/30)*(W-L-R);
+  for (let v = 0; v <= 30; v += 10){
+    svg.appendChild(el("line",{x1:x(v),y1:T-8,x2:x(v),y2:T+72,stroke:tok("--rule"),"stroke-width":1}));
+    svg.appendChild(txt(x(v), T-12, v + "%", {"text-anchor":"middle","font-size":10}));
+  }
+  rows.forEach(([label,v,colour],i) => {
+    const yy = T + 6 + i*34;
+    svg.appendChild(txt(L-8, yy+13, label, {"text-anchor":"end","font-size":11.5,fill:tok("--ink-2")}));
+    svg.appendChild(el("rect",{x:L,y:yy+3,width:Math.max(x(v)-L,1.5),height:16,fill:colour}));
+    svg.appendChild(txt(Math.max(x(v),L)+7, yy+16, v.toFixed(1) + "%",
+      {"font-size":11,fill:tok("--ink-2"),"font-weight":600}));
+  });
+  svg.appendChild(txt(0, H-8, "share of reported openings that fall outside the patch they describe",
+    {"font-size":10}));
+})();
+
+/* ---------------- schema block ---------------- */
+(function(){
+  const c = cases.find(x => x.daughters.length) || cases[0];
+  const d = c.daughters[0];
+  document.getElementById("schema").textContent = d ? JSON.stringify({
+    case_id: c.case_id,
+    parent: {instance_id: "aorta"},
+    daughters: [{
+      instance_id: d.id,
+      parent_instance_id: "aorta",
+      ostium_xyz_mm: d.ostium_xyz_mm,
+      seed_xyz_mm: d.seed_xyz_mm,
+      radius_mm: d.radius_mm,
+      direction_xyz: d.direction_xyz
+    }]
+  }, null, 2) : "{}";
+})();
+
+/* ---------------- clock rose ---------------- */
+(function(){
+  const svg = document.getElementById("rose");
+  const cx = 170, cy = 176, r0 = 32, rmax = 118, bins = 24;
+  const counts = new Array(bins).fill(0);
+  allBranches.forEach(b => counts[Math.floor((((b.clock_deg%360)+360)%360)/(360/bins)) % bins]++);
+  const top = Math.max(...counts, 1);
+  [1,0.5].forEach(f => svg.appendChild(el("circle",{cx,cy,r:r0+(rmax-r0)*f,fill:"none",
+    stroke:tok("--rule"),"stroke-width":1})));
+  svg.appendChild(el("circle",{cx,cy,r:r0,fill:"none",stroke:tok("--rule-2"),"stroke-width":1}));
+  counts.forEach((n,i) => {
+    if (!n) return;
+    const a0 = (i*360/bins - 90)*Math.PI/180, a1 = ((i+1)*360/bins - 90)*Math.PI/180;
+    const rr = r0 + (rmax-r0)*(n/top);
+    const p = [[cx+Math.cos(a0)*r0, cy+Math.sin(a0)*r0],[cx+Math.cos(a0)*rr, cy+Math.sin(a0)*rr],
+               [cx+Math.cos(a1)*rr, cy+Math.sin(a1)*rr],[cx+Math.cos(a1)*r0, cy+Math.sin(a1)*r0]];
+    const path = el("path",{d:`M${p[0]}L${p[1]}A${rr} ${rr} 0 0 1 ${p[2]}L${p[3]}A${r0} ${r0} 0 0 0 ${p[0]}Z`,
+      fill:tok("--origin"), "fill-opacity":.78, stroke:"#fff", "stroke-width":1});
+    const ttl = el("title"); ttl.textContent = `${n} daughters between ${i*360/bins}\u00b0 and ${(i+1)*360/bins}\u00b0`;
+    path.appendChild(ttl); svg.appendChild(path);
+  });
+  [[0,"12","anterior"],[90,"3","patient's left"],[180,"6","posterior"],[270,"9","patient's right"]]
+    .forEach(([deg,lab,side]) => {
+      const a = (deg-90)*Math.PI/180;
+      const px = cx+Math.cos(a)*(rmax+22), py = cy+Math.sin(a)*(rmax+22);
+      svg.appendChild(txt(px, py+4, lab, {"text-anchor":"middle","font-size":13,fill:tok("--ink"),"font-weight":700}));
+      svg.appendChild(txt(px, deg===0 ? py-10 : py+17, side, {"text-anchor":"middle","font-size":9.5}));
+    });
+  svg.appendChild(txt(cx, cy+5, String(allBranches.length),
+    {"text-anchor":"middle","font-size":17,fill:tok("--ink-2"),"font-weight":700}));
+  const ant = counts.slice(0,3).concat(counts.slice(21)).reduce((a,b)=>a+b,0);
+  document.getElementById("rosecap").textContent =
+    `Every daughter across all ${cases.length} cases, binned by clock position. No anatomical name is assigned `
+    + `anywhere in the pipeline, yet ${Math.round(100*ant/allBranches.length)} per cent land within forty-five `
+    + `degrees of twelve o'clock, where the coeliac and mesenteric vessels leave, with wings out towards three `
+    + `and nine where the renals do. The anatomy falls out of the data rather than being put in.`;
+})();
+
+/* ---------------- landing zones ---------------- */
+(function(){
+  const svg = document.getElementById("zonechart");
+  const rowH = 19, L = 40, R = 96, T = 22, W = 620;
+  const H = T + cases.length*rowH + 24;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const maxLen = Math.max(...cases.map(c=>c.aorta_length_mm));
+  const x = mm => L + (mm/maxLen)*(W-L-R);
+  for (let mm=0; mm<=maxLen; mm+=100){
+    svg.appendChild(el("line",{x1:x(mm),y1:T-8,x2:x(mm),y2:H-20,stroke:tok("--rule"),"stroke-width":1}));
+    svg.appendChild(txt(x(mm), T-12, String(mm), {"text-anchor":"middle","font-size":10}));
+  }
+  cases.slice().sort((a,b) => (bestZone(b)?.length_mm||0) - (bestZone(a)?.length_mm||0))
+    .forEach((c,i) => {
+      const yy = T + i*rowH;
+      svg.appendChild(txt(L-6, yy+12, c.case_id.replace("subject",""),
+        {"text-anchor":"end","font-size":10,fill:tok("--ink-3")}));
+      svg.appendChild(el("rect",{x:L,y:yy+4,width:x(c.aorta_length_mm)-L,height:10,
+        fill:tok("--origin"),"fill-opacity":.18}));
+      const z = bestZone(c);
+      if (z){
+        svg.appendChild(el("rect",{x:x(z.start_mm),y:yy+4,
+          width:Math.max(x(z.end_mm)-x(z.start_mm),2),height:10,fill:tok("--zone")}));
+        svg.appendChild(txt(x(c.aorta_length_mm)+6, yy+12,
+          `${z.length_mm.toFixed(0)} mm clear \u00b7 \u2300 ${z.min_diameter_mm.toFixed(0)}`,
+          {"font-size":9.5,fill:tok("--ink-2")}));
+      } else svg.appendChild(txt(x(c.aorta_length_mm)+6, yy+12, "none", {"font-size":9.5}));
+    });
+  svg.appendChild(txt(L, H-5, "millimetres along the supplied segment", {"font-size":10}));
+})();
+
+selectCase(0);
+})();
+</script>
