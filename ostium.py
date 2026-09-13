@@ -91,8 +91,8 @@ def deduplicate_ostia(candidates: list[OstiumCandidate]) -> list[OstiumCandidate
     Apply the spec's merge/split rules:
     - Distinct connected components at the wall stay distinct even if
       physically close together.
-    - A component that touches the wall at one contact zone and only
-      splits downstream is ONE instance, not multiple.
+    - A component that touches the wall at multiple separate contact zones 
+      is kept as multiple distinct ostia instances.
     Returns the final deduplicated, crop-face-filtered candidate list.
     """
     kept = []
@@ -105,17 +105,62 @@ def deduplicate_ostia(candidates: list[OstiumCandidate]) -> list[OstiumCandidate
         seen_labels.add(cand.component.label)
 
         zones = _contact_zones(cand.contact_voxel_indices)
-        if len(zones) > 1:
-            largest = max(zones, key=len)
-            cand = OstiumCandidate(
+        if len(zones) <= 1:
+            if not cand.is_cropped_face:
+                kept.append(cand)
+            continue
+
+        # If a single component touches the wall at multiple separate patches,
+        # extract and preserve each zone as a separate branch origin.
+        for zone in zones:
+            if cand.is_cropped_face:
+                continue
+            kept.append(OstiumCandidate(
                 component=cand.component,
-                contact_voxel_indices=largest,
-                centroid_index=find_contact_centroid(largest),
+                contact_voxel_indices=zone,
+                centroid_index=find_contact_centroid(zone),
                 is_cropped_face=False,
-            )
-        kept.append(cand)
+            ))
     return kept
 
+def merge_nearby_ostia(
+    candidates: list[OstiumCandidate],
+    image: sitk.Image,
+    merge_dist_mm: float = 4.0,
+) -> list[OstiumCandidate]:
+    """
+    Merge ostium candidates whose contact centroids sit within
+    `merge_dist_mm` of each other in physical space. Catches cases where
+    thresholding noise fragmented a single real ostium's wall-contact
+    patch into >1 candidate (which deduplicate_ostia now correctly keeps
+    separate at the connectivity level, but which are the same vessel).
+    Real distinct ostia in the abdominal aorta are essentially never
+    this close together.
+    """
+    def to_mm(idx):
+        return np.asarray(image.TransformContinuousIndexToPhysicalPoint(
+            tuple(float(v) for v in idx)
+        ))
+
+    merged = []
+    used = [False] * len(candidates)
+    for i, a in enumerate(candidates):
+        if used[i]:
+            continue
+        group = [a]
+        used[i] = True
+        a_mm = to_mm(a.centroid_index)
+        for j in range(i + 1, len(candidates)):
+            if used[j]:
+                continue
+            b_mm = to_mm(candidates[j].centroid_index)
+            if np.linalg.norm(a_mm - b_mm) <= merge_dist_mm:
+                group.append(candidates[j])
+                used[j] = True
+        # Keep whichever candidate has the larger contact patch —
+        # the more reliable estimate of the true ostium location.
+        merged.append(max(group, key=lambda c: len(c.contact_voxel_indices)))
+    return merged
 
 def _contact_zones(contact_voxel_indices: np.ndarray) -> list[np.ndarray]:
     """Split a contact patch into its 26-connected sub-zones."""
