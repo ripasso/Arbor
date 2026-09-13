@@ -213,6 +213,7 @@ def export_case(record, out_dir: str):
                             if c["bifurcation_mm"] else None),
             parent_radius_mm=round(float(c["parent_radius_mm"]), 2),
             confidence=c.get("confidence", 0.0),
+            radius_low_confidence=bool(c.get("radius_low_confidence", False)),
             hu=round(float(c["path_hu_median"]), 0),
             ostium_xyz_mm=[round(float(x), 2) for x in c["ostium_xyz_mm"]],
             seed_xyz_mm=[round(float(x), 2) for x in c["seed_xyz_mm"]],

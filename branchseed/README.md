@@ -126,3 +126,24 @@ direction vector drawn as it projects into that slice.
 Single-threaded, CPU only, peak memory under 2 GB. Cost scales with the length
 of aorta supplied rather than with file size. Per-case timings for the whole
 development set are in the table at the bottom of the visualisation.
+
+## Known limitations
+
+- **Radius below one voxel is unreliable.** The half-max contour radius is
+  accurate down to roughly the voxel size; below that, partial-volume blur
+  dominates and the estimate can be off by a factor of two either way
+  (measured on synthetic tubes at 1.5 mm spacing). Daughters whose reported
+  radius is smaller than the scan's finest voxel dimension carry
+  `radius_low_confidence: true` in the atlas data rather than being silently
+  trusted.
+- **The 2.6 mm footprint-merge radius is anatomical, not resolution-driven.**
+  It deduplicates patches belonging to the same opening split by a dim voxel;
+  real ostia in the dev set are never closer than ~4 mm, so a fixed physical
+  distance is the correct unit -- scaling it by voxel spacing would wrongly
+  merge distinct origins on coarse scans.
+- **Internal geometry assumes near-axis-aligned acquisitions.** Intermediate
+  distances and frames are computed in scaled-voxel space; final reported
+  coordinates always go through the full affine (verified 0.0 mm error vs
+  SimpleITK `TransformIndexToPhysicalPoint` on every dev case). One dev case
+  (subject024) has a ~3.5 degree rotated matrix, adding up to ~5% error to
+  internal distances on that case only.

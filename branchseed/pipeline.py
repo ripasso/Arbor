@@ -128,6 +128,9 @@ def process_case(image_path: str, mask_path: str, case_id: str,
 
     for c in daughters + extras:
         c["confidence"] = _confidence(c, stats)
+        # a radius smaller than one voxel dimension cannot be measured
+        # reliably -- flag it rather than pretend precision
+        c["radius_low_confidence"] = bool(c["radius_mm"] < float(np.min(spacing)))
 
     unwrap = None
     if want_maps:

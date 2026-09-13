@@ -1,11 +1,15 @@
 import glob, json, os, sys, time, traceback
 import numpy as np
-import resource
+try:
+    import resource
+except ImportError:          # Windows has no resource module
+    resource = None
 from pipeline import process_case, to_prediction
 from export import export_case, write_atlas
 
-DATA = "/home/claude/branchseed/data"
-OUT  = "/home/claude/branchseed/out"
+DATA = os.environ.get("BRANCHSEED_DATA", "/home/claude/branchseed/data")
+OUT  = os.environ.get("BRANCHSEED_OUT",
+                      os.path.join(os.path.dirname(os.path.abspath(__file__)), "out"))
 ASSETS = os.path.join(OUT, "assets")
 PRED = os.path.join(OUT, "predictions")
 os.makedirs(PRED, exist_ok=True); os.makedirs(ASSETS, exist_ok=True)
@@ -24,7 +28,8 @@ for s in subs:
         e = export_case(r, ASSETS)
         e["seconds"] = round(time.time()-t0, 2)
         entries.append(e)
-        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e6
+        peak = (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e6
+                if resource else float("nan"))
         print(f"{s}: {e['seconds']:5.1f}s  daughters={len(e['daughters'])} extras={len(e['extras'])} "
               f"len={e['aorta_length_mm']:.0f}mm zones={len(e['landing_zones'])} peakRSS={peak:.1f}GB")
     except Exception:
